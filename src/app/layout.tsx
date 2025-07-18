@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// import 'antd/dist/reset.css';
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -30,9 +31,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header />
-        <div className="pt-16">
+        <div className="pt-16 h-[calc(100vh-64px)]">
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="ml-[240px] px-4 py-5">
+          <div className="ml-[240px] px-4 py-5 h-[calc(100vh-64px)] overflow-y-auto">
             {children}
           </div>
         </div>
