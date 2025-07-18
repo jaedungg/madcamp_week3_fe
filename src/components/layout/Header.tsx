@@ -21,12 +21,12 @@ export default function Header() {
             fill="white"
           />
         </svg>
-        <div className="flex justify-start items-start flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
+        <div className="flex justify-start items-center gap-6 flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
           <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
             Hello
           </p>
+          <img className="h-10 w-10 flex-grow-0 flex-shrink-0 rounded-full object-cover" src="/images/profile.jpg" />
         </div>
-        <img className="flex-grow-0 flex-shrink-0" src="ellipse.png" />
       </div>
     </header>
     // <header className="bg-primary text-white p-4">

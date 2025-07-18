@@ -32,7 +32,7 @@ export default function RootLayout({
         <Header />
         <div className="pt-16">
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="ml-[240px]">
+          <div className="ml-[240px] px-4 py-5">
             {children}
           </div>
         </div>

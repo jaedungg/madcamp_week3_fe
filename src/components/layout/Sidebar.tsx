@@ -1,3 +1,5 @@
+import { usePathname, useRouter } from "next/navigation";
+
 const tabs = [
   { id: "chart", label: "인기 차트", icon: (    
     <svg
@@ -117,24 +119,31 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  
   return (
     // fixed top-0 left-0 w-full h-16 flex items-center justify-between px-8 py-4
     <div className="fixed top-16 left-0 p-2 w-[240px] h-full px-4 py-5 bg-white">
       <nav className="flex w-full flex-col gap-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`flex w-full items-center px-4 pr-5 py-3 gap-2 rounded-xl text-[20px] ${
-              activeTab === tab.id ? "bg-[#5856d6] text-white font-bold" : "text-[#5856d6]"
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.icon}
-            <p className="flex-grow-0 flex-shrink-0 text-xl text-left capitalize">
-              {tab.label}
-            </p>
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const isActive = pathname.startsWith(`/${tab.id}`);
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => router.push(`/${tab.id}`)}
+              className={`flex w-full items-center px-4 pr-5 py-3 gap-2 rounded-xl text-[20px] transition ${
+                isActive
+                  ? "bg-[#5856d6] text-white font-bold"
+                  : "text-[#5856d6] hover:bg-gray-100"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <p className="text-xl text-left capitalize">{tab.label}</p>
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
