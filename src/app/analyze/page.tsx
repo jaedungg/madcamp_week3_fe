@@ -1,9 +1,9 @@
-import Image from "next/image";
+import PitchAnalyzer from "@/components/analyze/PitchAnalyzer";
 
 export default function AnalyzePage() {
   return (
-    <div className="font-sans items-center justify-items-center min-h-screen">
-      Hello World!
+    <div className="font-sans flex flex-col h-full w-full space-y-12">
+      <PitchAnalyzer />
     </div>
   );
 }

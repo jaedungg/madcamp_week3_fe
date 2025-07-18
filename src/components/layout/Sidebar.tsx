@@ -135,8 +135,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               onClick={() => router.push(`/${tab.id}`)}
               className={`flex w-full items-center px-4 pr-5 py-3 gap-2 rounded-xl text-[20px] transition ${
                 isActive
-                  ? "bg-[#5856d6] text-white font-bold"
-                  : "text-[#5856d6] hover:bg-gray-100"
+                  ? "bg-indigo-600 text-white font-bold"
+                  : "text-indigo-600 hover:bg-gray-100"
               }`}
             >
               <span>{tab.icon}</span>
