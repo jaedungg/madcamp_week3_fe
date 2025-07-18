@@ -33,7 +33,7 @@ export default function RootLayout({
         <Header />
         <div className="pt-16 h-[calc(100vh-64px)]">
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="ml-[240px] px-4 py-5 h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="ml-[240px] px-5 py-5 h-[calc(100vh-64px)] overflow-y-auto">
             {children}
           </div>
         </div>
