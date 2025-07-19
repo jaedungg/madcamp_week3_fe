@@ -1,3 +1,5 @@
+// app/api/accompaniment/route.ts
+
 import { NextRequest } from 'next/server';
 import api from '@/lib/api/test';
 

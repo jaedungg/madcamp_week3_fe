@@ -1,16 +1,19 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import MRLoader from '@/components/analyze/MRLoader';
 
 const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder'), { ssr: false });
 
 export default function PitchAnalyzerPage() {
   return (
-    <main >
-      <h1>🎼 실시간 피치 분석기</h1>
-      <PitchRecorder />
+    <div className="font-sans flex flex-col h-full w-full space-y-12" >
+      <MRLoader />
+      {/* <SimpleChart /> */}      
+      
+      {/* <PitchRecorder /> */}
       {/* <SimpleChart /> */}
-    </main>
+    </div>
   );
 }
 

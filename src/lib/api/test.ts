@@ -3,6 +3,7 @@ import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
 
+// youtube 영상의 링크를 받아서 mr 분리
 async function requestSeparation(youtube_url?: string): Promise<string> {
   const form = new FormData();
   form.append('youtube_url', youtube_url ?? 'https://www.youtube.com/watch?v=PAE88urB1xs');
@@ -17,9 +18,10 @@ async function requestSeparation(youtube_url?: string): Promise<string> {
   return uuid;
 }
 
-async function requestSeparation_withdata(): Promise<string> {
+// 파일을 받아서 mr 분리
+async function requestSeparation_withdata(filePath: string): Promise<string> {
   const form = new FormData();
-  form.append('audio', fs.createReadStream('urrm.mp3'));
+  form.append('audio', fs.createReadStream(filePath)); 
 
   const response: AxiosResponse = await axios.post(
     'http://172.20.12.58:80/accompaniment',
@@ -31,6 +33,7 @@ async function requestSeparation_withdata(): Promise<string> {
   return uuid;
 }
 
+// 음원의 id(uuid) 반주 파일을 다운로드
 async function downloadAccompaniment(uuid: string): Promise<string> {
   const url = `http://172.20.12.58:80/get_accompaniment?musicid=${uuid}`;
   const response: AxiosResponse = await axios.get(url, { responseType: 'stream' });
@@ -51,7 +54,7 @@ async function downloadAccompaniment(uuid: string): Promise<string> {
 }
 
 async function separateAndDownload(): Promise<void> {
-  const uuid: string = await requestSeparation_withdata(); // Step 1
+  const uuid: string = await requestSeparation_withdata('urrm.mp3'); // Step 1
   if (!uuid) {
     console.error('uuid 획득 실패');
     return;

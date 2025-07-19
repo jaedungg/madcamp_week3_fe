@@ -146,6 +146,7 @@ export default function PitchRecorder() {
 
   return (
     <div>
+      <h1>🎼 실시간 피치 분석기</h1>
       <Button type="primary" onClick={handleRecord}>
         {isRecording ? '녹음 종료 & 분석' : '🎙 실시간 피치 녹음'}
       </Button>
