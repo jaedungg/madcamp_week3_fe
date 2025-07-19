@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { detectPitch } from '@/lib/pitchUtils'; // 오토코릴레이션 pitch detection 함수
+import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
 import { Button, Card, Collapse, Progress, Typography } from 'antd';
 import { Chart, registerables } from 'chart.js';
 
