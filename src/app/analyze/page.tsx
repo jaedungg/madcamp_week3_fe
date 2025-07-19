@@ -6,7 +6,7 @@ const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder')
 
 export default function PitchAnalyzerPage() {
   return (
-    <main style={{ padding: '2rem' }}>
+    <main >
       <h1>🎼 실시간 피치 분석기</h1>
       <PitchRecorder />
       {/* <SimpleChart /> */}
