@@ -3,9 +3,9 @@ import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
 
-async function requestSeparation(): Promise<string> {
+async function requestSeparation(youtube_url?: string): Promise<string> {
   const form = new FormData();
-  form.append('youtube_url', 'https://www.youtube.com/watch?v=PAE88urB1xs');
+  form.append('youtube_url', youtube_url ?? 'https://www.youtube.com/watch?v=PAE88urB1xs');
 
   const response: AxiosResponse = await axios.post(
     'http://172.20.12.58:80/accompaniment_with_ytlink',
@@ -31,27 +31,23 @@ async function requestSeparation_withdata(): Promise<string> {
   return uuid;
 }
 
-async function downloadAccompaniment(uuid: string): Promise<void> {
+async function downloadAccompaniment(uuid: string): Promise<string> {
   const url = `http://172.20.12.58:80/get_accompaniment?musicid=${uuid}`;
-
   const response: AxiosResponse = await axios.get(url, { responseType: 'stream' });
 
-  const outPath = path.join(__dirname, 'downloads', `${uuid}.mp3`);
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  const outDir = path.join(process.cwd(), 'public', 'downloads');
+  const outPath = path.join(outDir, `${uuid}.mp3`);
+  fs.mkdirSync(outDir, { recursive: true });
 
   const writer = fs.createWriteStream(outPath);
   response.data.pipe(writer);
 
   await new Promise<void>((resolve, reject) => {
-    writer.on('finish', () => {
-      console.log('파일 저장 완료:', outPath);
-      resolve();
-    });
-    writer.on('error', (e) => {
-      console.error('저장 실패:', e);
-      reject(e);
-    });
+    writer.on('finish', resolve);
+    writer.on('error', reject);
   });
+
+  return `/downloads/${uuid}.mp3`; // ✅ 클라이언트가 접근할 수 있는 경로 반환
 }
 
 async function separateAndDownload(): Promise<void> {
