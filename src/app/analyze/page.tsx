@@ -2,14 +2,25 @@
 
 import dynamic from 'next/dynamic';
 import MRLoader from '@/components/analyze/MRLoader';
+import { useState } from 'react';
 
 const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder'), { ssr: false });
 
 export default function PitchAnalyzerPage() {
+  const [ showRecorder, setShowRecorder ] = useState(false);
+  const [uuid, setUuid] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
   return (
     <div className="font-sans flex flex-col h-full w-full space-y-12" >
-      <MRLoader />
-      {/* <SimpleChart /> */}      
+      {!showRecorder && <MRLoader 
+        setShowRecorderAction={setShowRecorder}
+        uuid={uuid}
+        audioUrl={audioUrl}
+        setUuidAction={setUuid}
+        setAudioUrlAction={setAudioUrl}
+      />}
+      {showRecorder && <PitchRecorder />}      
       
       {/* <PitchRecorder /> */}
       {/* <SimpleChart /> */}
