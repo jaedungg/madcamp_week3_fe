@@ -1,4 +1,7 @@
+import { useUser } from '@/context/UserContext';
+
 export default function Header() {
+  const { userid } = useUser();
   return (
     <header className="fixed bg-indigo-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-8 py-4">
       <div className="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5">
@@ -22,10 +25,10 @@ export default function Header() {
           />
         </svg>
         <div className="flex justify-start items-center gap-6 flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
-          <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
-            Hello
-          </p>
-          <img className="h-10 w-10 flex-grow-0 flex-shrink-0 rounded-full object-cover" src="/images/profile.jpg" />
+          {userid && <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
+            {userid}
+          </p>}
+          <img className="h-10 w-10 flex-grow-0 flex-shrink-0 rounded-full object-cover" src={userid ? `http://172.20.12.58:80/profile/${userid}` : "/images/profile.jpg"} />
         </div>
       </div>
     </header>
