@@ -50,7 +50,7 @@ export default function CategoryGallery() {
     <div>
       <h2 className="text-xl font-bold mb-4">Songs</h2>
       <List
-        grid={{ gutter: 16, column: 5 }}
+        grid={{ gutter: 16, column: 6 }}
         dataSource={data}
         renderItem={(item) => (
           <List.Item>

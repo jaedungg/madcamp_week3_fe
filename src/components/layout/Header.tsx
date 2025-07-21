@@ -1,6 +1,6 @@
 export default function Header() {
   return (
-    <header className="fixed bg-indigo-600 top-0 left-0 w-full h-16 flex items-center justify-between px-8 py-4">
+    <header className="fixed bg-indigo-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-8 py-4">
       <div className="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5">
         <p className="flex-grow-0 flex-shrink-0 text-[32px] font-semibold text-left capsitalize text-white">
           🎤

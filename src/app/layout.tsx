@@ -31,9 +31,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header />
-        <div className="pt-16 h-[calc(100vh-64px)]">
+        <div className="flex h-screen pt-16 overflow-hidden">
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="ml-[240px] px-5 py-5 h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
             {children}
           </div>
         </div>

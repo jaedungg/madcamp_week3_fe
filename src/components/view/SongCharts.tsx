@@ -54,6 +54,7 @@ export default function SongCharts({ genieChart }: SongChartsProps) {
       <List
         itemLayout="horizontal"
         dataSource={genieChart}
+        loading={genieChart.length === 0}
         pagination={{
           pageSize: 5,
           showSizeChanger: false,
