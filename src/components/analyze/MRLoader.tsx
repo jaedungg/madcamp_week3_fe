@@ -47,8 +47,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
       });
 
       const data = await res.json();
-      console.log('Response data:', data);
-      console.log('Response uuid:', data.uuid);
+      console.log('Response data (uuid):', data);
 
       setUuidAction(data.uuid);
       setIsSeparating(false);
@@ -63,7 +62,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
     const res = await fetch(`/api/accompaniment?uuid=${uuid}`);
     const data = await res.json();
 
-    console.log('Download response data:', data);
+    console.log('Response data (audioUrl):', data);
     if (data.path) setAudioUrlAction(data.path);
   };
   

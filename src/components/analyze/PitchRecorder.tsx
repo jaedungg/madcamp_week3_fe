@@ -23,7 +23,11 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
   const timeStampsRef = useRef<number[]>([]);
   const tickRef = useRef(0);
   const isRecordingRef = useRef(false);
+  // 오디오 재생
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // 가사 표시
+  const [currentLyric, setCurrentLyric] = useState<string>('');
+  const lyricsRef = useRef<{ start: number; duration: number; text: string }[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [pitchData, setPitchData] = useState<(number | null)[]>([]);
@@ -67,8 +71,8 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
               },
               y: {
                 title: { display: true, text: 'Pitch (Hz)' },
-                min: 50,
-                max: 1000,
+                min: 0,
+                max: 1500,
               },
             },
           },
@@ -79,7 +83,15 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
 
   const updateChart = (labels: number[], liveData: (number | null)[]) => {
     if (!chartRef.current) return;
-  
+
+    // 그래프 스케일링
+    // const now = audioRef.current?.currentTime ?? 0;
+    // const minX = now * 1000 - 1000;
+    // const maxX = now * 1000 + 5000;
+    const nowTick = tickRef.current;
+    const minX = nowTick - 10000;
+    const maxX = nowTick + 50000;
+
     chartRef.current.data.labels = labels;
     chartRef.current.data.datasets[0].data = liveData;
   
@@ -89,6 +101,10 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
       originalData.push(null);
     }
     chartRef.current.data.datasets[1].data = originalData;
+    
+    // 그래프 스케일링
+    chartRef.current.options!.scales!.x!.min = minX;
+    chartRef.current.options!.scales!.x!.max = maxX;
   
     chartRef.current.update('none');
   };
@@ -203,8 +219,8 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
       fetchAudioData()
         .then((data) => {
           console.log('Audio data fetched: ', data);
-          console.log('parsed lyrics', JSON.parse(data.lyrics))
-          setOriginalPitch(data.pitch_vector);
+          lyricsRef.current = JSON.parse(data.lyrics);
+          setOriginalPitch(data.pitch_vector.slice(0));
         })
         .catch((error) => {
           console.error('Error fetching audio data:', error);
@@ -212,12 +228,23 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
     }
   }, [uuid, audioUrl]);
 
+  // 현재 오디오 시간에 맞춰 가사 업데이트
   useEffect(() => {
-    if (uuid && audioUrl) {
-      // uuid와 audioUrl이 있을 때, 녹음 시작
-      // handleRecord();
-    }
-  }, [uuid, audioUrl]);
+    const interval = setInterval(() => {
+      if (!audioRef.current) return;
+  
+      const currentTime = audioRef.current.currentTime;
+      const current = lyricsRef.current.find(
+        (line) =>
+          currentTime >= line.start &&
+          currentTime <= line.start + line.duration
+      );
+  
+      setCurrentLyric(current?.text ?? '');
+    }, 100); // 100ms 단위로 확인
+  
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div>
@@ -232,6 +259,27 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
           style={{ marginTop: '20px', border: '1px solid #ccc' }}
         />
       </div>
+
+      {currentLyric && (
+        <div> 
+        {/* <div 
+        className="text-center my-4 text-2xl font-bold transition-all duration-200 animate-pulse text-white drop-shadow-lg drop-shadow-indigo-500">
+          {currentLyric}
+        </div>  */}
+        <h1
+          className="text-center my-4 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
+          style={{
+            textShadow: `-1px -1px 0 #6366F1,
+                         1px -1px 0 #6366F1,
+                        -1px  1px 0 #6366F1,
+                         1px  1px 0 #6366F1`
+          }}
+        >
+          {currentLyric}
+        </h1>
+        </div>
+        
+      )}
 
       <button 
         className={`flex flex-1 items-center bg-indigo-400 justify-center p-3 px-4 rounded-lg text-lg text-white transition cursor-pointer`}
