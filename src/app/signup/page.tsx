@@ -1,14 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function SettingsPage() {
   const [userid, setUserid] = useState('');
-  const [password, setPassword] = useState('');
+  const [passwd, setPasswd] = useState('');
   const [nickname, setNickname] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    // cleanup: 메모리 누수 방지
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   useEffect(() => {
     const theme = localStorage.getItem('theme');
@@ -24,14 +38,66 @@ export default function SettingsPage() {
   };
 
   const handleAddUser = async () => {
-    const userData = {
-      userid: userid,
-      passwd: password,
-      nickname: nickname,
-      profile_url: file, 
+    if (!file) {
+      alert("프로필 이미지를 선택해주세요.");
+      return;
     }
-    console.log("user data: ", userData);
-  }
+    console.log('file:', file);
+    console.log('file.name:', file?.name);
+  
+    try {
+      // ✅ Step 1: 이미지 업로드 (Flask로 직접 전송)
+      const formData = new FormData();
+      
+      formData.append('file', file);
+      formData.append('userid', userid);
+  
+      const uploadRes = await fetch('http://172.20.12.58:80/upload', {
+        method: 'POST',
+        body: formData,
+        // mode: 'no-cors'
+      });
+  
+      const text = await uploadRes.text();
+      console.log('upload response text:', text);
+      const uploadData = JSON.parse(text);
+      
+      const profile_url = uploadData.profile_url;
+      console.log('✅ 프로필 URL:', profile_url);
+  
+      // ✅ Step 2: 유저 정보 등록 (Next.js 서버 경유)
+      const userData = {
+        userid,
+        passwd,
+        nickname,
+        profile_url,
+      };
+  
+      const res = await fetch('/api/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+  
+      const result = await res.json();
+      if (!res.ok) {
+        alert('회원가입 실패: ' + (result?.error || '서버 오류'));
+      } else {
+        alert('회원가입 성공!');
+      }
+    } catch (error) {
+      console.error('에러 발생:', error);
+      alert('회원가입 중 문제가 발생했습니다.');
+    }
+    setNickname('');
+    setUserid('');
+    setPasswd('');
+    setFile(null);
+    setPreviewUrl(null);
+    setIsDark(false);
+  };  
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-10 text-gray-900 dark:text-white">
@@ -40,7 +106,7 @@ export default function SettingsPage() {
       {/* 프로필 섹션 */}
       <div className="flex items-center gap-6">
         <img
-          src={thumbnailUrl || '/images/profile.jpg'}
+          src={previewUrl || '/images/profile.jpg'}
           alt="프로필 사진"
           className="w-24 h-24 rounded-full object-cover border"
         />
@@ -65,8 +131,8 @@ export default function SettingsPage() {
         {/* 비밀번호 섹션 */}
         <input
           className="flex-1 w-full border border-gray-300 px-3 py-2 rounded text-black dark:text-white dark:bg-gray-800"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={passwd}
+          onChange={(e) => setPasswd(e.target.value)}
           placeholder="비밀번호 입력"
         />
         {/* 닉네임 섹션 */}
