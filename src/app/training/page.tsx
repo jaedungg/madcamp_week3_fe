@@ -29,8 +29,6 @@ const SongAnalysisPage = () => {
 
   return (
     <div className="w-full space-y-8 text-gray-900 dark:text-white">
-      <Title level={2}>🏋️ 보컬 트레이닝</Title>
-
       <Card title="🔍 맞춤형 추천 루틴" bordered>
         <Space direction="vertical">
           <Paragraph>

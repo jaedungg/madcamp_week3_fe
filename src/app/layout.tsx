@@ -7,6 +7,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { useState } from "react";
+import { ConfigProvider } from "antd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,13 +31,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header />
-        <div className="flex h-screen pt-16 overflow-hidden">
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
-            {children}
+        <ConfigProvider
+          theme={{
+            token: {
+              // Seed Token
+              colorPrimary: '#6366f1',
+            },
+          }}
+        >
+          <Header />
+          <div className="flex h-screen pt-16 overflow-hidden">
+            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
+              {children}
+            </div>
           </div>
-        </div>
+        </ConfigProvider>
       </body>
     </html>
   );

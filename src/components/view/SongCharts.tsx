@@ -7,7 +7,7 @@ import {
   PlayCircleFilled,
   FilterOutlined,
 } from '@ant-design/icons';
-import { Button, List, Tabs } from 'antd';
+import { Button, ConfigProvider, List, Tabs } from 'antd';
 import { useState } from 'react';
 
 const categories = ['All', 'Jumpscare', 'Mellow', 'Happiness', 'Ambience', 'Zonk'];
@@ -43,11 +43,7 @@ export default function SongCharts({ genieChart }: SongChartsProps) {
             key: cat,
             label: <span className="text-base">{cat}</span>,
           }))}
-          className="[&_.ant-tabs-nav-list]:gap-4"
         />
-        <Button icon={<FilterOutlined />} className="text-sm font-medium">
-          Filter
-        </Button>
       </div>
 
       {/* 리스트 */}
