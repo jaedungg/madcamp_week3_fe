@@ -146,17 +146,23 @@ export default function PitchRecorder() {
 
   return (
     <div>
-      <h1>🎼 실시간 피치 분석기</h1>
-      <Button type="primary" onClick={handleRecord}>
-        {isRecording ? '녹음 종료 & 분석' : '🎙 실시간 피치 녹음'}
-      </Button>
+      <h1 className='text-xl font-bold mb-4'>🎼 실시간 피치 분석기</h1>
 
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={300}
-        style={{ marginTop: '20px', border: '1px solid #ccc' }}
-      />
+
+      <div className='w-[80%] mx-auto mb-4'>
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={300}
+          style={{ marginTop: '20px', border: '1px solid #ccc' }}
+        />
+      </div>
+
+      <button 
+        className={`flex flex-1 items-center bg-indigo-400 justify-center p-3 px-4 rounded-lg text-lg text-white transition cursor-pointer`}
+        onClick={handleRecord}>
+        {isRecording ? '녹음 종료 & 분석' : '🎙 실시간 피치 녹음'}
+      </button>
 
       {analyzed && (
         <Card title="AI 분석 리포트" style={{ marginTop: 24 }}>

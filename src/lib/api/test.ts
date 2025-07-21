@@ -63,10 +63,12 @@ async function separateAndDownload(): Promise<void> {
   await downloadAccompaniment(uuid); // Step 2
 }
 
-async function getrank(): Promise<void> {
+async function getrank(): Promise<any> {
   try {
     const response: AxiosResponse = await axios.get('http://172.20.12.58:80/genie-chart');
+    console.log("getrank 호출 성공");
     console.log(response.data);
+    return response.data; // 반환값이 필요하다면
   } catch (err: any) {
     console.error('요청 실패:', err.message);
   }

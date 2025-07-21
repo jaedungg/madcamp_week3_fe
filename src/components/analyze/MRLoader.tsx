@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadingOutlined } from '@ant-design/icons';
 import { Dispatch, useEffect } from 'react';
 import { SetStateAction, useState } from 'react';
 
@@ -15,9 +16,11 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
   const [method, setMethod] = useState<'youtube' | 'file' | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isSeparating, setIsSeparating] = useState(false);
 
   const handleSeparation = async () => {
     console.log('handleSeparation called');
+    setIsSeparating(true);
     setUuidAction(null);
     setAudioUrlAction(null);
 
@@ -33,36 +36,42 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
       const data = await res.json();
       console.log('Response data:', data);
       console.log('Response uuid:', data.uuid);
+
       setUuidAction(data.uuid);
+      setIsSeparating(false);
     } else if (youtubeUrl) {
+
       const res = await fetch('/api/separate', {
         method: 'POST',
         body: youtubeUrl,
       });
 
-      console.log('Response:', res);
-      console.log('Response status:', res.status);
-
       const data = await res.json();
+      console.log('Response data:', data);
+      console.log('Response uuid:', data.uuid);
+
       setUuidAction(data.uuid);
+      setIsSeparating(false);
     } else {
       alert('YouTube URL을 입력하거나 파일을 업로드해주세요.');
     }
   };
 
+  const handleDownload = async () => {
+    if (!uuid) return;
+    
+    const res = await fetch(`/api/accompaniment?uuid=${uuid}`);
+    const data = await res.json();
+
+    console.log('Download response data:', data);
+    if (data.path) setAudioUrlAction(data.path);
+  };
+  
   useEffect (() => {
     if (uuid) {
       handleDownload();
     }
   }, [uuid]);
-  
-  const handleDownload = async () => {
-    if (!uuid) return;
-
-    const res = await fetch(`/api/accompaniment?uuid=${uuid}`);
-    const data = await res.json();
-    if (data.path) setAudioUrlAction(data.path);
-  };
 
   return (
     <div className="max-w-4xl mx-auto my-auto space-y-10">
@@ -124,10 +133,11 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
         onClick={handleSeparation}
         className={`flex w-full items-center justify-center p-3 rounded-lg text-lg bg-indigo-300 transition hover:bg-indigo-400 cursor-pointer`}
       >
-        🚀 분리 시작
+        {isSeparating ? <span className='gap-2'><LoadingOutlined /> 분리 중</span> : '🔊 MR 분리하기'}
+
       </button>
       
-      {true && (
+      {audioUrl && (
         <div className="mt-4 space-y-2 text-lg">
           <p className="font-semibold text-xl">✅ MR 분리 완료</p>
           {audioUrl && (
