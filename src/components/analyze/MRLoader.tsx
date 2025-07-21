@@ -69,6 +69,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
   
   useEffect (() => {
     if (uuid) {
+      console.log('UUID is set:', uuid);
       handleDownload();
     }
   }, [uuid]);
@@ -86,7 +87,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
           onClick={() => setMethod('youtube')}
           className={`flex flex-1 items-center justify-center p-3 rounded-lg text-lg transition cursor-pointer ${
             method === 'youtube'
-              ? "text-black bg-indigo-200"
+              ? "text-black bg-indigo-300"
               : "bg-gray-100 text-black hover:bg-gray-200"
           }`}
         >
@@ -96,7 +97,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
           onClick={() => setMethod('file')}
           className={`flex flex-1 items-center justify-center p-3 rounded-lg text-lg transition cursor-pointer ${
             method === 'file'
-              ? "text-black bg-indigo-200"
+              ? "text-black bg-indigo-300"
               : "bg-gray-100 text-black hover:bg-gray-200"
           }`}
         >
@@ -133,7 +134,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
         onClick={handleSeparation}
         className={`flex w-full items-center justify-center p-3 rounded-lg text-lg bg-indigo-300 transition hover:bg-indigo-400 cursor-pointer`}
       >
-        {isSeparating ? <span className='gap-2'><LoadingOutlined /> 분리 중</span> : '🔊 MR 분리하기'}
+        {isSeparating ? <p className='flex gap-3 items-center'><LoadingOutlined /> 분리 중</p> : '🔊 MR 분리하기'}
 
       </button>
       

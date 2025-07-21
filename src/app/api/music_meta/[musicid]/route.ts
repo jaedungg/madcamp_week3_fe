@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { musicid: string } }
 ) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_FLASK_URL}/music_meta/${params.musicid}`);
+    const res = await fetch(`http://172.20.12.58:80/music_meta/${params.musicid}`);
     if (!res.ok) throw new Error('Failed to fetch music meta');
   
     const data = await res.json();

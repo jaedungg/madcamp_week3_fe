@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
 import { Button, Card, Collapse, Progress, Typography } from 'antd';
 import { Chart, registerables } from 'chart.js';
@@ -9,7 +9,12 @@ Chart.register(...registerables);
 
 const { Text } = Typography;
 
-export default function PitchRecorder() {
+interface PitchRecorderProps {
+  uuid: string | null;
+  audioUrl: string | null;
+}
+
+export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -21,6 +26,7 @@ export default function PitchRecorder() {
 
   const [isRecording, setIsRecording] = useState(false);
   const [pitchData, setPitchData] = useState<(number | null)[]>([]);
+  const [originalPitch, setOriginalPitch] = useState<(number | null)[]>([]);
   const [timeStamps, setTimeStamps] = useState<number[]>([]);
   const [analyzed, setAnalyzed] = useState(false);
   const [feedback, setFeedback] = useState<string[]>([]);
@@ -36,9 +42,16 @@ export default function PitchRecorder() {
             labels: [],
             datasets: [
               {
-                label: 'Pitch (Hz)',
+                label: 'Live Pitch (Hz)',
                 data: [],
                 borderColor: 'blue',
+                fill: false,
+                pointRadius: 0,
+              },
+              {
+                label: 'Original Pitch (Hz)',
+                data: [],
+                borderColor: 'orange',
                 fill: false,
                 pointRadius: 0,
               },
@@ -63,10 +76,19 @@ export default function PitchRecorder() {
     }
   }, []);
 
-  const updateChart = (labels: number[], data: (number | null)[]) => {
+  const updateChart = (labels: number[], liveData: (number | null)[]) => {
     if (!chartRef.current) return;
+  
     chartRef.current.data.labels = labels;
-    chartRef.current.data.datasets[0].data = data;
+    chartRef.current.data.datasets[0].data = liveData;
+  
+    // 원곡 pitch 길이가 liveData보다 짧으면 나머지는 null로 채우기
+    const originalData = [...originalPitch];
+    while (originalData.length < labels.length) {
+      originalData.push(null);
+    }
+    chartRef.current.data.datasets[1].data = originalData;
+  
     chartRef.current.update('none');
   };
 
@@ -75,15 +97,15 @@ export default function PitchRecorder() {
       // 녹음 종료
       setIsRecording(false);
       isRecordingRef.current = false;
-
+      
       // 분석용 상태에 복사
       setPitchData([...pitchDataRef.current]);
       setTimeStamps([...timeStampsRef.current]);
-
+      
       analyzePitch();
       return;
     }
-
+    
     // 초기화
     pitchDataRef.current = [];
     timeStampsRef.current = [];
@@ -92,33 +114,33 @@ export default function PitchRecorder() {
     setFeedback([]);
     setIsRecording(true);
     isRecordingRef.current = true;
-
+    
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
     source.connect(analyser);
-
+    
     const buffer = new Float32Array(analyser.fftSize);
-
+    
     const loop = () => {
       if (!isRecordingRef.current) {
         audioContext.close();
         return;
       }
-
+      
       analyser.getFloatTimeDomainData(buffer);
       const pitch = detectPitch(buffer, audioContext.sampleRate);
-
+      
       pitchDataRef.current.push(pitch ?? null);
       timeStampsRef.current.push(tickRef.current);
       updateChart(timeStampsRef.current, pitchDataRef.current);
-
+      
       tickRef.current += 50;
       requestAnimationFrame(loop);
     };
-
+    
     loop();
   };
 
@@ -127,11 +149,11 @@ export default function PitchRecorder() {
       (p) => p !== null && p > 50 && p < 800
     ) as number[];
     const average =
-      cleaned.reduce((a, b) => a + b, 0) / cleaned.length || 0;
+    cleaned.reduce((a, b) => a + b, 0) / cleaned.length || 0;
     const variance =
-      cleaned.reduce((acc, p) => acc + Math.pow(p - average, 2), 0) /
-        cleaned.length || 0;
-
+    cleaned.reduce((acc, p) => acc + Math.pow(p - average, 2), 0) /
+    cleaned.length || 0;
+    
     const result: string[] = [];
     if (average > 500)
       result.push('⚠️ 전반적으로 고음 위주입니다. 안정적인 발성이 필요해요.');
@@ -139,10 +161,47 @@ export default function PitchRecorder() {
       result.push('🎯 음정 흔들림이 큽니다. 발성의 일관성을 연습해보세요.');
     if (average < 200)
       result.push('📉 음정이 낮은 편입니다. 더 정확한 음정을 겨냥해보세요.');
-
+    
     setFeedback(result);
     setAnalyzed(true);
   };
+
+  console.log('PitchRecorder mounted with uuid:', uuid, 'audioUrl:', audioUrl);
+
+  const fetchAudioData = async () => {
+    const response = await fetch('/api/music_meta/' + uuid, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch audio data');
+    }
+    const data = await response.json();
+    return data;
+  };
+
+  useEffect(() => {
+    if (uuid && audioUrl) {
+      console.log('Fetching audio data for uuid:', uuid);
+      fetchAudioData()
+        .then((data) => {
+          console.log('Audio data fetched: ', data);
+          setOriginalPitch(data.pitch_vector);
+        })
+        .catch((error) => {
+          console.error('Error fetching audio data:', error);
+        });
+    }
+  }, [uuid, audioUrl]);
+
+  useEffect(() => {
+    if (uuid && audioUrl) {
+      // uuid와 audioUrl이 있을 때, 녹음 시작
+      // handleRecord();
+    }
+  }, [uuid, audioUrl]);
 
   return (
     <div>
