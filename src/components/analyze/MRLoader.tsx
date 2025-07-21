@@ -69,7 +69,6 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
   
   useEffect (() => {
     if (uuid) {
-      console.log('UUID is set:', uuid);
       handleDownload();
     }
   }, [uuid]);
@@ -132,7 +131,7 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
       <button
         onClick={handleSeparation}
-        className={`flex w-full items-center justify-center p-3 rounded-lg text-lg bg-indigo-300 transition hover:bg-indigo-400 cursor-pointer`}
+        className={`flex w-full items-center justify-center p-3 rounded-lg text-lg ${isSeparating ? "bg-indigo-400" : "bg-indigo-300"} transition hover:bg-indigo-400 cursor-pointer`}
       >
         {isSeparating ? <p className='flex gap-3 items-center'><LoadingOutlined /> 분리 중</p> : '🔊 MR 분리하기'}
 

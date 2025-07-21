@@ -7,9 +7,9 @@ import { useState } from 'react';
 const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder'), { ssr: false });
 
 export default function PitchAnalyzerPage() {
-  const [ showRecorder, setShowRecorder ] = useState(true);
-  const [uuid, setUuid] = useState<string | null>("bff84aab-dde6-4956-a556-fbbc00070571");
-  const [audioUrl, setAudioUrl] = useState<string | null>("/downloads/bff84aab-dde6-4956-a556-fbbc00070571.mp3");
+  const [ showRecorder, setShowRecorder ] = useState(false);
+  const [uuid, setUuid] = useState<string | null>("e7847779-1608-42ee-b3e2-da1231579d4b");
+  const [audioUrl, setAudioUrl] = useState<string | null>("downloads/e7847779-1608-42ee-b3e2-da1231579d4b.mp3");
 
   return (
     <div className="font-sans flex flex-col h-full w-full space-y-12" >

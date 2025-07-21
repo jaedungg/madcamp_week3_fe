@@ -23,6 +23,7 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
   const timeStampsRef = useRef<number[]>([]);
   const tickRef = useRef(0);
   const isRecordingRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [pitchData, setPitchData] = useState<(number | null)[]>([]);
@@ -97,6 +98,12 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
       // 녹음 종료
       setIsRecording(false);
       isRecordingRef.current = false;
+
+      // 오디오 정지
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       
       // 분석용 상태에 복사
       setPitchData([...pitchDataRef.current]);
@@ -114,6 +121,14 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
     setFeedback([]);
     setIsRecording(true);
     isRecordingRef.current = true;
+
+    // 오디오 재생 시작
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch((err) => {
+        console.error('오디오 재생 오류:', err);
+      });
+    }
     
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const audioContext = new AudioContext();
@@ -188,6 +203,7 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
       fetchAudioData()
         .then((data) => {
           console.log('Audio data fetched: ', data);
+          console.log('parsed lyrics', JSON.parse(data.lyrics))
           setOriginalPitch(data.pitch_vector);
         })
         .catch((error) => {
@@ -206,7 +222,7 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
   return (
     <div>
       <h1 className='text-xl font-bold mb-4'>🎼 실시간 피치 분석기</h1>
-
+      <audio ref={audioRef} src={audioUrl ?? undefined} />
 
       <div className='w-[80%] mx-auto mb-4'>
         <canvas
