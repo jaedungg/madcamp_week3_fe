@@ -1,19 +1,30 @@
 'use client';
-
+import { useUser } from '@/context/UserContext';
 import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
+  const { userid } = useUser();
   const [nickname, setNickname] = useState('');
-  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState(`http://172.20.12.58:80/profile/${userid}`);
   const [file, setFile] = useState<File | null>(null);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const res = await fetch('/api/profile/me');
-      const data = await res.json();
+      const response = await fetch('/api/user/' + userid, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+      const data = await response.json();
+      console.log("user profile", data);
+
       setNickname(data.nickname);
-      setThumbnailUrl(data.thumbnailUrl);
+      setThumbnailUrl(data.profile_url);
     };
     fetchProfile();
 
@@ -25,10 +36,11 @@ export default function SettingsPage() {
   }, []);
 
   const handleNicknameChange = async () => {
-    const res = await fetch('/api/profile/me/nickname', {
-      method: 'PUT',
+    console.log("handleNicknameChange called", userid)
+    const res = await fetch(`/api/user/${userid}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ changedName: nickname }),
+      body: JSON.stringify({ nickname: nickname }),
     });
 
     if (!res.ok) alert('닉네임 변경 실패');
@@ -37,18 +49,41 @@ export default function SettingsPage() {
 
   const handleImageUpload = async () => {
     if (!file) return alert('파일을 선택해주세요');
-    const formData = new FormData();
-    formData.append('thumbnail', file);
+    try {
+      // Step 1: 이미지 업로드 (Flask로 직접 전송)
+      const formData = new FormData();
+      
+      formData.append('file', file);
+      formData.append('userid', userid);
+  
+      const uploadRes = await fetch('http://172.20.12.58:80/upload', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      const text = await uploadRes.text();
+      console.log('upload response text:', text);
+      const uploadData = JSON.parse(text);
+      
+      const profile_url = uploadData.profile_url;
+      console.log('변경할 프로필 URL:', profile_url);
 
-    const res = await fetch('/api/profile/me/thumbnail', {
-      method: 'PUT',
-      body: formData,
-    });
-
-    if (!res.ok) alert('프로필 사진 변경 실패');
-    else {
-      const data = await res.json();
-      setThumbnailUrl(data.newUrl);
+      const res = await fetch(`/api/user/${userid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_url: profile_url }),
+      });
+  
+      const result = await res.json();
+      if (!res.ok) {
+        alert('프로필 사진 변경 실패: ' + (result?.error || '서버 오류'));
+      } else {
+        alert('프로필 사진 변경 성공!');
+        setThumbnailUrl(profile_url)
+      }
+    } catch (error) {
+      console.error('에러 발생:', error);
+      alert('프로필 변경 중 문제가 발생했습니다.');
     }
   };
 
