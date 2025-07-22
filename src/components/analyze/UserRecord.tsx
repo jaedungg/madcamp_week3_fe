@@ -197,31 +197,6 @@ export default function UserRecord({uuid, audioUrl, userAudioUrl} : UserRecordPr
     echoedAudioRef.current = echoAudio;
   };
 
-  // const analyzePitch = () => {
-  //   const cleaned = pitchDataRef.current.filter(
-  //     (p) => p !== null && p > 50 && p < 800
-  //   ) as number[];
-  //   const average =
-  //   cleaned.reduce((a, b) => a + b, 0) / cleaned.length || 0;
-  //   const variance =
-  //   cleaned.reduce((acc, p) => acc + Math.pow(p - average, 2), 0) /
-  //   cleaned.length || 0;
-    
-  //   const result: string[] = [];
-  //   if (average > 500)
-  //     result.push('⚠️ 전반적으로 고음 위주입니다. 안정적인 발성이 필요해요.');
-  //   if (variance > 2000)
-  //     result.push('🎯 음정 흔들림이 큽니다. 발성의 일관성을 연습해보세요.');
-  //   if (average < 200)
-  //     result.push('📉 음정이 낮은 편입니다. 더 정확한 음정을 겨냥해보세요.');
-    
-  //   setFeedback(result);
-  //   setAnalyzed(true);
-  // };
-
-  // console.log('UserRecord mounted with uuid:', uuid, 'audioUrl:', audioUrl);
-
-  // 현재 오디오 시간에 맞춰 가사 업데이트
   useEffect(() => {
     const interval = setInterval(() => {
       if (!audioRef.current) return;

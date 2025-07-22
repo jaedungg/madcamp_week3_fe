@@ -24,11 +24,11 @@ const MusicList: React.FC<Props> = ({ items }) => {
 
   const handleClick = async (item: MusicItem) => {
     try {
-      const res = await fetch(`http://172.20.12.58:80/ytlink/${encodeURIComponent(item.title)}`);
+      const res = await fetch(`http://172.20.12.58:80/ytlink/${encodeURIComponent(item.title+item.artist)}`);
       const data = await res.json();
       if (data.link) {
         await navigator.clipboard.writeText(data.link);
-        messageApi.success(`링크 복사됨: ${item.title}`);
+        messageApi.success(`링크 복사됨: ${item.title+item.artist}`);
       } else {
         messageApi.error('링크를 찾을 수 없습니다.');
       }

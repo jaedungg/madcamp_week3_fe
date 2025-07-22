@@ -93,7 +93,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-10 text-gray-900 dark:text-white">
-      <h1 className="text-2xl font-bold">🛠️ 설정</h1>
+      <h1 className="text-2xl font-bold">프로필 설정</h1>
 
       {/* 프로필 섹션 */}
       <div className="flex items-center gap-6">

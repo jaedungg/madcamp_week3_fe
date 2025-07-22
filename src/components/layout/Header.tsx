@@ -3,8 +3,11 @@ import { useUser } from '@/context/UserContext';
 import { useState, useEffect } from 'react';
 import { useProfileImage } from '@/context/ProfileImageContext';
 import { useNickname } from '@/context/NicknameContext';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
+  const router = useRouter();
+  
   const { userid } = useUser();
   const { profileImageKey } = useProfileImage();
   const { nickname } = useNickname();
@@ -15,9 +18,12 @@ export default function Header() {
     : '/images/profile.jpg';
 
   return (
-    <header className="fixed bg-indigo-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-8 py-4">
-      <div className="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5">
-        <p className="flex-grow-0 flex-shrink-0 text-[32px] font-semibold text-left capsitalize text-white">
+    <header className="fixed bg-indigo-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-6 py-4">
+      <div 
+        className="flex justify-center items-center relative overflow-hidden gap-2.5 cursor-pointer"
+        onClick={() => router.push(`/signin`)}
+      >
+        <p className="flex-grow-0 flex-shrink-0 text-[32px] font-semibold text-left text-white">
           🎤
         </p>
       </div>
@@ -36,9 +42,12 @@ export default function Header() {
             fill="white"
           />
         </svg>
-        <div className="flex justify-start items-center gap-6 flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
+        <div 
+          className="flex justify-start items-center flex-grow-0 flex-shrink-0 relative gap-4 cursor-pointer"
+          onClick={() => router.push(`/settings`)}
+        >
           {userid && (
-            <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
+            <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left text-white">
               {nickname || userid}
             </p>
           )}
