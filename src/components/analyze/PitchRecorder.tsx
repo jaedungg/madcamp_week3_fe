@@ -1,11 +1,11 @@
 'use client';
 
-import { useUser } from '@/context/UserContext';
 import { Dispatch, SetStateAction, use, useEffect, useRef, useState } from 'react';
 import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
 import { Button, Card, Collapse, Progress, Typography, Alert, Flex, Spin } from 'antd';
 import { AudioOutlined, AudioFilled, StopOutlined } from '@ant-design/icons';
 import { Chart, registerables } from 'chart.js';
+import { useSession } from 'next-auth/react';
 
 Chart.register(...registerables);
 
@@ -55,7 +55,8 @@ function calculateAccuracyLive(
 }
 
 export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : PitchRecorderProps) {
-  const { userid } = useUser();
+  const { data: session } = useSession();
+  const userid = session?.user?.userid || '';
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);

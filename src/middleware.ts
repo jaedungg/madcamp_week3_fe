@@ -1,17 +1,13 @@
-export default function middleware(request: Request) {  
-  // // This middleware function runs on every request to the Next.js application.
-  // // You can add your custom logic here, such as authentication, logging, etc.
-  
-  // // For example, you could log the request URL:
-  // console.log(`Request made to: ${request.url}`);
+// middleware.ts
+import { withAuth } from 'next-auth/middleware';
+import type { NextRequest } from 'next/server';
 
-  // // You can also modify the request or response if needed.
-  // // For now, we simply return the response without modification.
-  
-  // return new Response('Middleware executed', {
-  //   status: 200,
-  //   headers: {
-  //     'Content-Type': 'text/plain',
-  //   },
-  // });
-}
+export default withAuth((req: NextRequest) => {}, {
+  callbacks: {
+    authorized: ({ token }) => !!token,
+  },
+});
+
+export const config = {
+  matcher: ['/settings/:path*', '/feedback/:path*'], // 로그인 필요 페이지 추가
+};

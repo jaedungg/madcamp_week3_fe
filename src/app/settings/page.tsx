@@ -1,56 +1,98 @@
 'use client';
 
-import { useUser } from '@/context/UserContext';
+import { useSession } from 'next-auth/react';
 import { useProfileImage } from '@/context/ProfileImageContext';
 import { useNickname } from '@/context/NicknameContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
-  const { userid } = useUser();
-  const { refreshProfileImage } = useProfileImage();
-  const { setNickname } = useNickname();
+  const { data: session, status, update } = useSession();
+  const { profileImageKey, refreshProfileImage } = useProfileImage();
+  const { nickname, setNickname } = useNickname();
+  const router = useRouter();
 
+  const userid = session?.user?.userid || '';
   const [nicknameLocal, setNicknameLocal] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isDark, setIsDark] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const imgUpdateTsRef = useRef(Date.now());
+
+  async function fetchProfileInfo() {
+    if (!userid) return;
+    try {
+      const res = await fetch(`/api/user/${userid}`);
+      if (!res.ok) throw new Error('프로필 정보를 불러오는데 실패했습니다.');
+      const data = await res.json();
+
+      setNicknameLocal(data.nickname || nickname || '');
+      setThumbnailUrl(`http://172.20.12.58:80/profile/${userid}`);
+
+      imgUpdateTsRef.current = Date.now();
+      // 세션과 Context 닉네임 동기화가 잘 안될 수 있으니 안전하게 setNickname도 호출
+      if (data.nickname && data.nickname !== nickname) {
+        setNickname(data.nickname);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   useEffect(() => {
-    async function fetchProfile() {
-      const res = await fetch(`/api/user/${userid}`);
-      if (!res.ok) throw new Error('Failed to fetch user profile');
-      const data = await res.json();
-      setNicknameLocal(data.nickname);
-      setNickname(data.nickname);
-      setThumbnailUrl(`http://172.20.12.58:80/profile/${userid}`);
+    if (!userid) {
+      setLoading(false);
+      return;
     }
-    fetchProfile();
+    setLoading(true);
+
+    fetchProfileInfo().finally(() => setLoading(false));
 
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
       setIsDark(true);
       document.documentElement.classList.add('dark');
     }
-  }, [userid, setNickname]);
+  }, [userid]);
 
   const handleNicknameChange = async () => {
+    if (!userid) return alert('로그인이 필요합니다.');
+
     try {
       const res = await fetch(`/api/user/${userid}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nickname: nicknameLocal }),
       });
+      if (!res.ok) throw new Error('닉네임 변경에 실패했습니다.');
 
-      if (!res.ok) throw new Error('닉네임 변경 실패');
       alert('닉네임 변경 완료');
-      setNickname(nicknameLocal); // Context에 반영해 헤더 자동 갱신
-    } catch (e) {
-      alert(e instanceof Error ? e.message : '닉네임 변경 실패');
+
+      // NextAuth 세션도 업데이트 (네임만 바꿔도 세션에 반영)
+      if (update) await update({ name: nicknameLocal });
+
+      // Context 및 로컬 상태 동기화
+      setNickname(nicknameLocal);
+
+      // 서버에서 최신 프로필 다시 fetch
+      await fetchProfileInfo();
+
+      // 페이지 전체 새로고침으로 데이터 싱크 보장
+      router.refresh();
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : '닉네임 변경 중 오류가 발생했습니다.'
+      );
     }
   };
 
   const handleImageUpload = async () => {
-    if (!file) return alert('파일을 선택해주세요');
+    if (!file || !userid) return alert('파일과 로그인 상태를 확인해주세요.');
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -63,33 +105,41 @@ export default function SettingsPage() {
       const text = await uploadRes.text();
       const uploadData = JSON.parse(text);
 
-      const profile_url = uploadData.profile_url;
-
       const res = await fetch(`/api/user/${userid}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_url }),
+        body: JSON.stringify({ profile_url: uploadData.profile_url }),
       });
 
       if (!res.ok) {
         const result = await res.json();
-        alert('프로필 사진 변경 실패: ' + (result?.error || '서버 오류'));
-      } else {
-        alert('프로필 사진 변경 성공!');
-        setThumbnailUrl(profile_url);
-        refreshProfileImage(); // Context에 반영해 프로필 이미지 즉시 갱신
+        alert('프로필 사진 변경 실패: ' + (result.error ?? '서버 오류'));
+        return;
       }
+
+      alert('프로필 사진이 변경되었습니다.');
+
+      refreshProfileImage();
+
+      imgUpdateTsRef.current = Date.now();
+
+      await fetchProfileInfo();
+
+      router.refresh();
     } catch (error) {
-      console.error('에러 발생:', error);
-      alert('프로필 변경 중 문제가 발생했습니다.');
+      console.error('프로필 사진 변경 중 에러:', error);
+      alert('프로필 사진 변경 중 문제가 발생했습니다.');
     }
   };
 
-  const toggleDarkMode = (enabled: boolean) => {
-    setIsDark(enabled);
-    localStorage.setItem('theme', enabled ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', enabled);
+  const toggleDarkMode = (on: boolean) => {
+    setIsDark(on);
+    localStorage.setItem('theme', on ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', on);
   };
+
+  if (loading) return <div>로딩 중...</div>;
+  if (status === 'unauthenticated') return <div>로그인이 필요합니다.</div>;
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-10 text-gray-900 dark:text-white">
@@ -100,7 +150,7 @@ export default function SettingsPage() {
         <img
           src={
             thumbnailUrl
-              ? `${thumbnailUrl}?t=${Date.now()}`
+              ? `${thumbnailUrl}?t=${imgUpdateTsRef.current}`
               : '/images/profile.jpg'
           }
           alt="프로필 사진"

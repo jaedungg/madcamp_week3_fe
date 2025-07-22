@@ -11,6 +11,7 @@ import { ConfigProvider } from 'antd';
 import { UserProvider } from '@/context/UserContext';
 import { ProfileImageProvider } from '@/context/ProfileImageContext';
 import { NicknameProvider } from '@/context/NicknameContext';
+import { SessionProvider } from 'next-auth/react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,28 +35,33 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <UserProvider>
-          <ProfileImageProvider>
-            <NicknameProvider>
-              <ConfigProvider
-                theme={{
-                  token: {
-                    // Seed Token
-                    colorPrimary: '#6366f1',
-                  },
-                }}
-              >
-                <Header />
-                <div className="flex h-screen pt-16 overflow-hidden">
-                  <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-                  <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
-                    {children}
+        <SessionProvider>
+          <UserProvider>
+            <ProfileImageProvider>
+              <NicknameProvider>
+                <ConfigProvider
+                  theme={{
+                    token: {
+                      // Seed Token
+                      colorPrimary: '#6366f1',
+                    },
+                  }}
+                >
+                  <Header />
+                  <div className="flex h-screen pt-16 overflow-hidden">
+                    <Sidebar
+                      activeTab={activeTab}
+                      setActiveTab={setActiveTab}
+                    />
+                    <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
+                      {children}
+                    </div>
                   </div>
-                </div>
-              </ConfigProvider>
-            </NicknameProvider>
-          </ProfileImageProvider>
-        </UserProvider>
+                </ConfigProvider>
+              </NicknameProvider>
+            </ProfileImageProvider>
+          </UserProvider>
+        </SessionProvider>
       </body>
     </html>
   );
