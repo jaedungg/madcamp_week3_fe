@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, use, useEffect, useRef, useState } from 'react';
 import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
 import { Button, Card, Collapse, Progress, Typography } from 'antd';
 import { Chart, registerables } from 'chart.js';
@@ -12,9 +12,10 @@ const { Text } = Typography;
 interface PitchRecorderProps {
   uuid: string | null;
   audioUrl: string | null;
+  setUserAudioUrlAction: Dispatch<SetStateAction<string | null>>;
 }
 
-export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
+export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : PitchRecorderProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -28,13 +29,14 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
   // 가사 표시
   const [currentLyric, setCurrentLyric] = useState<string>('');
   const lyricsRef = useRef<{ start: number; duration: number; text: string }[]>([]);
+  // 유저 노래 녹음
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [pitchData, setPitchData] = useState<(number | null)[]>([]);
   const [originalPitch, setOriginalPitch] = useState<(number | null)[]>([]);
   const [timeStamps, setTimeStamps] = useState<number[]>([]);
-  const [analyzed, setAnalyzed] = useState(false);
-  const [feedback, setFeedback] = useState<string[]>([]);
 
   // Chart 초기화
   useEffect(() => {
@@ -65,17 +67,52 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
           options: {
             animation: false,
             responsive: true,
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  color: '#333',
+                  font: { size: 12 }
+                }
+              },
+              tooltip: {
+                backgroundColor: '#222',
+                titleColor: '#fff',
+                bodyColor: '#ccc',
+              },
+            },
             scales: {
               x: {
-                title: { display: true, text: 'Time (ms)' },
+                grid: {
+                  display: false,
+                },
+                ticks: {
+                  color: '#666',
+                  font: { size: 10 },
+                  maxTicksLimit: 2, // ❗ 눈금 수 제한
+                  // callback: (value) => `${(Number(value) / 1000).toFixed(1)}s`, // 숫자 포맷
+                  callback: (value) => `${value}s`, // 숫자 포맷
+                },
+                title: {
+                  display: false, // ❌ 제목 숨김
+                },
               },
               y: {
-                title: { display: true, text: 'Pitch (Hz)' },
+                grid: {
+                  display: false, // ❌ 가로선 안보이게
+                },
+                ticks: {
+                  color: '#666',
+                  font: { size: 10 },
+                },
+                title: {
+                  display: false, // ❌ 제목 숨김
+                },
                 min: 0,
                 max: 1500,
               },
             },
-          },
+          }
         });
       }
     }
@@ -83,37 +120,37 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
 
   const updateChart = (labels: number[], liveData: (number | null)[]) => {
     if (!chartRef.current) return;
-
-    // 그래프 스케일링
-    // const now = audioRef.current?.currentTime ?? 0;
-    // const minX = now * 1000 - 1000;
-    // const maxX = now * 1000 + 5000;
-    const nowTick = tickRef.current;
-    const minX = nowTick - 10000;
-    const maxX = nowTick + 50000;
-
+  
     chartRef.current.data.labels = labels;
     chartRef.current.data.datasets[0].data = liveData;
   
-    // 원곡 pitch 길이가 liveData보다 짧으면 나머지는 null로 채우기
-    const originalData = [...originalPitch];
-    while (originalData.length < labels.length) {
-      originalData.push(null);
-    }
+    // 🔍 각 ms 타임스탬프에 대해 10ms 단위 originalPitch 인덱스로 대응
+    const originalData = labels.map((time) => {
+      const index = Math.floor(time / 34);
+      return originalPitch[index] ?? null;
+    });
+  
     chartRef.current.data.datasets[1].data = originalData;
-    
-    // 그래프 스케일링
-    chartRef.current.options!.scales!.x!.min = minX;
-    chartRef.current.options!.scales!.x!.max = maxX;
+  
+    const nowMs = (audioRef.current?.currentTime ?? 0) * 1000;
   
     chartRef.current.update('none');
   };
+  
 
   const handleRecord = async () => {
     if (isRecording) {
       // 녹음 종료
       setIsRecording(false);
       isRecordingRef.current = false;
+
+      // MediaRecorder 중단
+      mediaRecorderRef.current?.stop();
+      mediaRecorderRef.current!.onstop = () => {
+        const audioBlob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
+        const userUrl = URL.createObjectURL(audioBlob);
+        setUserAudioUrlAction(userUrl); // 🔊 유저 음성만 담긴 파일 저장
+      };
 
       // 오디오 정지
       if (audioRef.current) {
@@ -124,8 +161,6 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
       // 분석용 상태에 복사
       setPitchData([...pitchDataRef.current]);
       setTimeStamps([...timeStampsRef.current]);
-      
-      analyzePitch();
       return;
     }
     
@@ -133,8 +168,6 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
     pitchDataRef.current = [];
     timeStampsRef.current = [];
     tickRef.current = 0;
-    setAnalyzed(false);
-    setFeedback([]);
     setIsRecording(true);
     isRecordingRef.current = true;
 
@@ -147,6 +180,18 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
     }
     
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // ✅ MediaRecorder 초기화 추가
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    recordedChunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    };
+    mediaRecorder.start();
+
     const audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
@@ -173,28 +218,6 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
     };
     
     loop();
-  };
-
-  const analyzePitch = () => {
-    const cleaned = pitchDataRef.current.filter(
-      (p) => p !== null && p > 50 && p < 800
-    ) as number[];
-    const average =
-    cleaned.reduce((a, b) => a + b, 0) / cleaned.length || 0;
-    const variance =
-    cleaned.reduce((acc, p) => acc + Math.pow(p - average, 2), 0) /
-    cleaned.length || 0;
-    
-    const result: string[] = [];
-    if (average > 500)
-      result.push('⚠️ 전반적으로 고음 위주입니다. 안정적인 발성이 필요해요.');
-    if (variance > 2000)
-      result.push('🎯 음정 흔들림이 큽니다. 발성의 일관성을 연습해보세요.');
-    if (average < 200)
-      result.push('📉 음정이 낮은 편입니다. 더 정확한 음정을 겨냥해보세요.');
-    
-    setFeedback(result);
-    setAnalyzed(true);
   };
 
   console.log('PitchRecorder mounted with uuid:', uuid, 'audioUrl:', audioUrl);
@@ -286,34 +309,6 @@ export default function PitchRecorder({uuid, audioUrl} : PitchRecorderProps) {
         onClick={handleRecord}>
         {isRecording ? '녹음 종료 & 분석' : '🎙 실시간 피치 녹음'}
       </button>
-
-      {analyzed && (
-        <Card title="AI 분석 리포트" style={{ marginTop: 24 }}>
-          <Progress
-            percent={Math.min(100, Math.round(100 - feedback.length * 20))}
-          />
-          <Collapse
-            defaultActiveKey={['1']}
-            style={{ marginTop: 16 }}
-            items={[
-              {
-                key: '1',
-                label: '피드백 요약',
-                children:
-                  feedback.length > 0 ? (
-                    feedback.map((line, idx) => (
-                      <Text key={idx}>{line}</Text>
-                    ))
-                  ) : (
-                    <Text type="success">
-                      👏 안정적인 피치 유지! 훌륭합니다.
-                    </Text>
-                  ),
-              },
-            ]}
-          />
-        </Card>
-      )}
     </div>
   );
 }

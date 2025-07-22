@@ -2,14 +2,17 @@
 
 import dynamic from 'next/dynamic';
 import MRLoader from '@/components/analyze/MRLoader';
+import UserRecord from '@/components/analyze/UserRecord';
 import { useState } from 'react';
 
 const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder'), { ssr: false });
 
 export default function PitchAnalyzerPage() {
   const [ showRecorder, setShowRecorder ] = useState(false);
-  const [uuid, setUuid] = useState<string | null>("e7847779-1608-42ee-b3e2-da1231579d4b");
-  const [audioUrl, setAudioUrl] = useState<string | null>("downloads/e7847779-1608-42ee-b3e2-da1231579d4b.mp3");
+  const [uuid, setUuid] = useState<string | null>("36eb6d5c-a8a9-42a2-bb4a-dea92f3a5103");
+  const [audioUrl, setAudioUrl] = useState<string | null>("/downloads/36eb6d5c-a8a9-42a2-bb4a-dea92f3a5103.mp3");
+  const [userAudioUrl, setUserAudioUrl] = useState<string | null>(null);
+
 
   return (
     <div className="font-sans flex flex-col h-full w-full space-y-12" >
@@ -20,13 +23,20 @@ export default function PitchAnalyzerPage() {
         setUuidAction={setUuid}
         setAudioUrlAction={setAudioUrl}
       />}
-      {showRecorder && <PitchRecorder 
-        uuid={uuid}
-        audioUrl={audioUrl}
-      />}      
-      
-      {/* <PitchRecorder /> */}
-      {/* <SimpleChart /> */}
+      {showRecorder && 
+      <>
+        <PitchRecorder 
+          uuid={uuid}
+          audioUrl={audioUrl}
+          setUserAudioUrlAction = {setUserAudioUrl}
+        />
+        <UserRecord
+          uuid={uuid}
+          audioUrl={audioUrl}
+          userAudioUrl = {userAudioUrl}    
+          setUserAudioUrl = {setUserAudioUrl}          
+        /> 
+      </>}   
     </div>
   );
 }
