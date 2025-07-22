@@ -1,16 +1,8 @@
 'use client';
-import { useUser } from '@/context/UserContext';
+
+import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import {
-  Button,
-  Table,
-  Avatar,
-  Card,
-  Typography,
-  Tag,
-  Spin,
-  message,
-} from 'antd';
+import { Button, Table, Tag, Spin, message, Card, Typography } from 'antd';
 import {
   CrownFilled,
   UserOutlined,
@@ -19,23 +11,25 @@ import {
 
 const { Title, Paragraph } = Typography;
 
+// UserRecord 타입 정의
 type UserRecord = {
   recordid: number;
   userid: string;
-  musicid: string; // string으로 변경
+  musicid: string;
   score: number;
   audio_url: string;
   pitch_vector: string;
   onset_times: string;
   created_at: string;
-  title: string; // 곡명
-  artist: string; // 가수명
+  title: string;
+  artist: string;
 };
 
+// 테이블 컬럼 정의
 const columns = [
   {
     title: '순위',
-    dataIndex: 'ranking', // api에서 순위 필드는 'ranking' 입니다.
+    dataIndex: 'ranking',
     key: 'ranking',
     render: (ranking: number) =>
       ranking === 1 ? (
@@ -48,11 +42,11 @@ const columns = [
   },
   {
     title: '닉네임',
-    dataIndex: 'userid', // api에서는 닉네임 대신 userid 필드를 사용합니다.
+    dataIndex: 'userid', // API에서 userid가 닉네임 역할을 하므로 그대로 사용
     key: 'userid',
     render: (userid: string) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Avatar size="small" icon={<UserOutlined />} />
+        <UserOutlined />
         <span>{userid}</span>
       </div>
     ),
@@ -67,20 +61,36 @@ const columns = [
     align: 'center' as const,
   },
 ];
+
+// 백엔드 API 기본 URL
 const beurl = 'http://172.20.12.58:80';
+
 export default function UserSongsAndRankingPage() {
-  const { userid } = useUser();
+  const { data: session, status } = useSession();
+
+  // 세션에서 userid 가져오기
+  const userid = session?.user?.userid ?? '';
+
+  // 내가 부른 노래 데이터 상태
   const [myRecords, setMyRecords] = useState<UserRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
-  const [selectedSongId, setSelectedSongId] = useState<string | null>(null); // string
 
+  // 선택된 노래 ID 상태 (musicid)
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
+
+  // 랭킹 데이터 상태
   const [ranking, setRanking] = useState<
     Array<{ key: string; ranking: number; userid: string; score: number }>
   >([]);
   const [loadingRanking, setLoadingRanking] = useState(false);
 
-  // 내가 부른 노래 리스트 가져오기 (userid 기준 전체 데이터)
+  // 내가 부른 노래 목록 불러오기
   useEffect(() => {
+    if (!userid) {
+      setMyRecords([]);
+      return;
+    }
+
     async function fetchMyRecords() {
       setLoadingRecords(true);
       try {
@@ -101,16 +111,18 @@ export default function UserSongsAndRankingPage() {
     fetchMyRecords();
   }, [userid]);
 
-  // 선택된 곡의 랭킹 가져오기
+  // 선택된 노래 랭킹 불러오기
   useEffect(() => {
-    if (selectedSongId === null) return;
+    if (selectedSongId === null) {
+      setRanking([]);
+      return;
+    }
 
     async function fetchRanking() {
       setLoadingRanking(true);
       try {
-        // GET 방식인데 body는 서버에 따라 안 받기도 하니 query param 예로 변경 가능
         const res = await fetch(
-          beurl + `/ranks/${encodeURIComponent(selectedSongId as string)}`
+          beurl + `/ranks/${encodeURIComponent(selectedSongId ?? '')}`
         );
         if (!res.ok) throw new Error('랭킹 불러오기 실패: ' + res.statusText);
         const data = await res.json();
@@ -121,7 +133,6 @@ export default function UserSongsAndRankingPage() {
         setLoadingRanking(false);
       }
     }
-
     fetchRanking();
   }, [selectedSongId]);
 
@@ -132,15 +143,16 @@ export default function UserSongsAndRankingPage() {
     if (myRecords.length === 0)
       return <Paragraph>내가 부른 노래가 없습니다.</Paragraph>;
 
-    // musicid 기준 최신 레코드만 남김
+    // musicid 기준 최신 레코드만 유지
     const uniqueSongs: { [key: string]: UserRecord } = {};
     myRecords.forEach((rec) => {
       const key = rec.musicid;
       if (
         !uniqueSongs[key] ||
         new Date(rec.created_at) > new Date(uniqueSongs[key].created_at)
-      )
+      ) {
         uniqueSongs[key] = rec;
+      }
     });
 
     const songList = Object.values(uniqueSongs).sort(
@@ -158,6 +170,11 @@ export default function UserSongsAndRankingPage() {
               className="py-2 cursor-pointer hover:bg-indigo-50 transition rounded flex items-center gap-2"
               onClick={() => setSelectedSongId(song.musicid)}
               aria-label={`곡 ${song.title} 선택`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') setSelectedSongId(song.musicid);
+              }}
             >
               <div className="font-bold" style={{ minWidth: 55 }}>
                 {song.title}
@@ -223,11 +240,15 @@ export default function UserSongsAndRankingPage() {
             bordered
             size="small"
             locale={{ emptyText: '랭킹 데이터가 없습니다.' }}
+            rowKey={(record) => record.key}
           />
         )}
       </Card>
     );
   }
+
+  if (status === 'loading') return <Spin tip="세션 로딩중..." />;
+  if (!userid) return <Paragraph>로그인을 해주세요.</Paragraph>;
 
   return (
     <div className="max-w-2xl mx-auto p-3 space-y-8">

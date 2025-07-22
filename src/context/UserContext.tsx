@@ -1,28 +1,39 @@
-// src/context/UserContext.tsx
-'use client';
+// UserContext.tsx 예시 (닉네임 관리 추가)
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+interface UserContextValue {
+  userid: string | null;
+  nickname: string | null;
+  setNickname: (nick: string) => void;
+}
 
-type UserContextType = {
-  userid: string;
-  setUserid: (id: string) => void;
-};
+const UserContext = createContext<UserContextValue>({
+  userid: null,
+  nickname: null,
+  setNickname: () => {},
+});
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+  const { data: session } = useSession();
+  const [userid, setUserid] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
 
-export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [userid, setUserid] = useState('');
+  useEffect(() => {
+    if (session?.user) {
+      setUserid(session.user.userid || null);
+      setNickname(session.user.name || null);
+    } else {
+      setUserid(null);
+      setNickname(null);
+    }
+  }, [session]);
+
   return (
-    <UserContext.Provider value={{ userid, setUserid }}>
+    <UserContext.Provider value={{ userid, nickname, setNickname }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-};
+export const useUser = () => useContext(UserContext);
