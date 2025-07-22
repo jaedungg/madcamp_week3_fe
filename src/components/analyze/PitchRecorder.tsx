@@ -37,6 +37,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
   const [isRecording, setIsRecording] = useState(false);
   const [pitchData, setPitchData] = useState<(number | null)[]>([]);
   const [originalPitch, setOriginalPitch] = useState<(number | null)[]>([]);
+  const [originalNotes, setOriginalNotes] = useState<(number | null)[]>([]);
   const [timeStamps, setTimeStamps] = useState<number[]>([]);
 
   // Chart 초기화
@@ -122,7 +123,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     // 🔍 각 ms 타임스탬프에 대해 10ms 단위 originalPitch 인덱스로 대응
     const originalData = labels.map((time) => {
       const index = Math.floor(time / 34);
-      return originalPitch[index] ?? null;
+      return originalNotes[index] ?? null;
     });
   
     chartRef.current.data.datasets[1].data = originalData;
@@ -215,7 +216,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     loop();
   };
 
-  console.log('PitchRecorder mounted with uuid:', uuid, 'audioUrl:', audioUrl);
+  // console.log('PitchRecorder mounted with uuid:', uuid, 'audioUrl:', audioUrl);
 
   const fetchAudioData = async () => {
     const response = await fetch('/api/music_meta/' + uuid, {
@@ -231,18 +232,40 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     return data;
   };
 
+  const fetchAudioNotes = async () => {
+    const response = await fetch('/api/music_meta_note/' + uuid, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch audio notes');
+    }
+    const data = await response.json();
+    return data;
+  };
+
   useEffect(() => {
     if (uuid && audioUrl) {
       console.log('Fetching audio data for uuid:', uuid);
       fetchAudioData()
         .then((data) => {
-          console.log('Audio data fetched: ', data);
+          console.log('Audio data fetched');
           lyricsRef.current = JSON.parse(data.lyrics);
-          setOriginalPitch(data.pitch_vector.slice(0));
+          setOriginalPitch(data.pitch_vector);
         })
         .catch((error) => {
           console.error('Error fetching audio data:', error);
         });
+      fetchAudioNotes()
+        .then((data) => {
+          setOriginalNotes(data.notes)
+        })
+        .catch((error) => {
+          console.error('Error fetching audio notes:', error);
+        });
+      
     }
   }, [uuid, audioUrl]);
 

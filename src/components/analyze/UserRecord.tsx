@@ -219,7 +219,7 @@ export default function UserRecord({uuid, audioUrl, userAudioUrl} : UserRecordPr
   //   setAnalyzed(true);
   // };
 
-  console.log('UserRecord mounted with uuid:', uuid, 'audioUrl:', audioUrl);
+  // console.log('UserRecord mounted with uuid:', uuid, 'audioUrl:', audioUrl);
 
   // 현재 오디오 시간에 맞춰 가사 업데이트
   useEffect(() => {
