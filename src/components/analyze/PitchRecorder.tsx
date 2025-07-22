@@ -22,6 +22,13 @@ function hzToMidi(hz: number | null): number | null {
   return Math.round(69 + 12 * Math.log2(hz / 440));
 }
 
+function midiToNoteName(midi: number): string {
+  const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const note = NOTE_NAMES[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${note}${octave}`;
+}
+
 function calculateAccuracyLive(
   userPitchHz: (number | null)[],
   originalNotes: (number | null)[]
@@ -57,6 +64,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
   const timeStampsRef = useRef<number[]>([]);
   const startTimeRef = useRef<number>(0);
   const isRecordingRef = useRef(false);
+  const lastValidPitchRef = useRef<number | null>(null); // 마지막 유효한 피치 저장
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
@@ -71,6 +79,11 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
 
   const [isNoteFetched, setIsNoteFetched] = useState(false);
 
+  // === 상수 정의 ===
+  const SAMPLE_RATE = 22050;
+  const HOP_LENGTH = 256;
+  const FRAME_DURATION_MS = (HOP_LENGTH / SAMPLE_RATE) * 1000; // ~11.6ms per frame
+
   // === Chart 초기화 ===
   useEffect(() => {
     if (canvasRef.current && !chartRef.current) {
@@ -82,11 +95,13 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
             labels: [],
             datasets: [
               {
-                label: 'Live Pitch (Hz)',
+                label: 'User Pitch (MIDI)',
                 data: [],
-                borderColor: 'blue',
+                borderColor: 'rgb(99, 102, 241)', // indigo-300
                 fill: false,
                 pointRadius: 0,
+                // tension: 0.1,
+                borderWidth: 3,
               },
               {
                 label: 'Original Note (MIDI)',
@@ -94,12 +109,37 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
                 borderColor: 'gray',
                 fill: false,
                 pointRadius: 0,
+                borderDash: [8, 4],
+                borderWidth: 3, // 더 두꺼운 선
+                // tension: 0.1, // 부드러운 곡선
               },
+              {
+                label: 'Current Point',
+                data: [],
+                borderColor: 'rgb(99, 102, 241)', // indigo-300
+                backgroundColor: 'rgb(99, 102, 241)', // indigo-300
+                pointRadius: 6,
+                pointBorderWidth: 2,
+                pointBorderColor: 'white',
+                showLine: false,
+                pointHoverRadius: 8,
+              },
+              {
+                label: 'Current Time Line',
+                data: [],
+                borderColor: 'rgb(199, 210, 254)', // red-500
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                fill: false,
+                pointRadius: 0,
+                borderWidth: 2,
+                showLine: true,
+              }
             ],
           },
           options: {
             animation: false,
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
               legend: {
                 display: false,
@@ -107,22 +147,44 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
             },
             scales: {
               x: {
-                grid: { display: false },
-                ticks: {
+                type: 'linear',
+                position: 'bottom',
+                grid: { 
                   display: false,
+                  color: 'rgba(0, 0, 0, 0.1)',
+                },
+                ticks: {
+                  display: true,
                   color: '#666',
-                  font: { size: 10 },
-                  callback: (value) => `${(Number(value)).toFixed(1)}s`,
+                  font: { size: 11 },
+                  // callback: (value) => {
+                  //   const seconds = (Number(value) / 1000).toFixed(1);
+                  //   return `${seconds}s`;
+                  // },
+                  callback: (value, index, ticks) => {
+                    // 마지막 tick만 표시
+                    if (index === ticks.length - 1) {
+                      const seconds = (Number(value) / 1000).toFixed(1);
+                      return `${seconds}s`;
+                    }
+                    return '';
+                  },
                 },
               },
               y: {
-                grid: { display: false },
-
+                grid: { 
+                  display: false,
+                  color: 'rgba(0, 0, 0, 0.1)',
+                },
                 min: 30,
                 max: 100,
                 ticks: {
-                  callback: (val) => `MIDI ${val}`,
+                  callback: (val) => {
+                    if (typeof val === 'number') return midiToNoteName(val);
+                    return '';
+                  },
                   color: '#444',
+                  font: { size: 11 }
                 },
               },
             },
@@ -141,22 +203,75 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     // 현재 시간(ms)
     const now = timeStamps.at(-1) ?? 0;
 
-    // 범위: 1초 전 ~ 4초 후
-    const windowStart = now - 1000;
-    const windowEnd = now + 4000;
+    // 그래프 윈도우: 현재 기준 -1초 ~ +4초 (총 5초 윈도우)
+    const windowStart = now - 1000; // -1초
+    const windowEnd = now + 4000;   // +4초
 
-    const filteredTime = timeStamps.filter((t) => t >= windowStart && t <= windowEnd);
-    const filteredUserPitch = userPitch.slice(-filteredTime.length);
+    // 시간 범위에 맞는 데이터 필터링 (사용자 피치용)
+    const filteredIndices: number[] = [];
+    const filteredTime: number[] = [];
+    const filteredUserPitch: (number | null)[] = [];
 
-    const frameDuration = 256 / 22050 * 1000;
-    const filteredOriginal = filteredTime.map((t) => {
-      const index = Math.floor(t / frameDuration);
-      return originalNotes[index] ?? null;
+    timeStamps.forEach((timestamp, index) => {
+      if (timestamp >= windowStart && timestamp <= windowEnd) {
+        filteredIndices.push(index);
+        filteredTime.push(timestamp);
+        filteredUserPitch.push(userPitch[index]);
+      }
     });
 
-    chartRef.current.data.labels = filteredTime;
-    chartRef.current.data.datasets[0].data = filteredUserPitch;
-    chartRef.current.data.datasets[1].data = filteredOriginal;
+    // 원곡 피치 데이터 생성 - 전체 윈도우에 대해 미리 생성 (미래 피치 포함)
+    const originalPitchData: { x: number; y: number }[] = [];
+    
+    // 윈도우 전체 범위에 대해 원곡 피치 생성 (10ms 간격으로)
+    for (let timestamp = windowStart; timestamp <= windowEnd; timestamp += 10) {
+      const frameIndex = Math.floor(timestamp / FRAME_DURATION_MS);
+      const originalPitch = originalNotes[frameIndex];
+      
+      if (originalPitch !== null && originalPitch !== undefined) {
+        originalPitchData.push({
+          x: timestamp,
+          y: originalPitch
+        });
+      }
+    }
+
+    // 차트 데이터 업데이트
+    chartRef.current.data.labels = Array.from(
+      {length: Math.floor((windowEnd - windowStart) / 10)}, 
+      (_, i) => windowStart + i * 10
+    );
+    
+    chartRef.current.data.datasets[0].data = filteredUserPitch.map((pitch, i) => 
+      pitch !== null ? { x: filteredTime[i], y: pitch } : null
+    ).filter(Boolean);
+    
+    // 원곡 피치는 미래까지 표시 (오른쪽에서 왼쪽으로 다가오는 효과)
+    chartRef.current.data.datasets[1].data = originalPitchData;
+
+    // 현재 포인트 표시 (파란 점) - 직전 유효한 피치 값 유지
+    const currentPitch = userPitch.at(-1);
+    if (currentPitch !== null && currentPitch !== undefined) {
+      lastValidPitchRef.current = currentPitch; // 유효한 피치가 있으면 업데이트
+    }
+    
+    // 현재 포인트는 항상 표시 (유효한 피치가 있었던 경우)
+    const displayPitch = lastValidPitchRef.current;
+    chartRef.current.data.datasets[2].data = (displayPitch !== null && now) 
+      ? [{ x: now, y: displayPitch }] 
+      : [];
+
+    // 현재 시점 세로선 추가
+    chartRef.current.data.datasets[3].data = now 
+      ? [
+          { x: now, y: 30 },  // Y축 최소값
+          { x: now, y: 100 }  // Y축 최대값
+        ]
+      : [];
+
+    // X축 범위 설정 (고정된 윈도우)
+    chartRef.current.options.scales!.x!.min = windowStart;
+    chartRef.current.options.scales!.x!.max = windowEnd;
 
     chartRef.current.update('none');
   };
@@ -207,6 +322,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     pitchDataRef.current = [];
     timeStampsRef.current = [];
     startTimeRef.current = performance.now();
+    lastValidPitchRef.current = null; // 마지막 유효 피치도 초기화
     setIsRecording(true);
     isRecordingRef.current = true;
 
@@ -246,7 +362,10 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
       timeStampsRef.current.push(elapsed);
       updateChart();
 
-      const currentScore = calculateAccuracyLive(pitchDataRef.current, originalNotes);
+      // 정확도 계산 - 현재까지의 프레임 수에 맞춰서 계산
+      const currentFrameIndex = Math.floor(elapsed / FRAME_DURATION_MS);
+      const relevantOriginalNotes = originalNotes.slice(0, currentFrameIndex + 1);
+      const currentScore = calculateAccuracyLive(pitchDataRef.current, relevantOriginalNotes);
       setScore(currentScore);
 
       requestAnimationFrame(loop);
@@ -290,10 +409,6 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
   useEffect(() => {
     if (!uuid || !audioUrl) return;
 
-    // fetch('/api/music_meta_note/' + uuid)
-    //   .then((res) => res.json())
-    //   .then((data) => setOriginalNotes(data.notes))
-    //   .catch(console.error);
     console.log('Fetching audio data for uuid:', uuid);
     fetchAudioData()
       .then((data) => {
@@ -305,7 +420,8 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
       });
     fetchAudioNotes()
       .then((data) => {
-        setOriginalNotes(data.notes)
+        setOriginalNotes(data.notes);
+        console.log(`Original notes loaded: ${data.notes.length} frames, frame duration: ${FRAME_DURATION_MS.toFixed(2)}ms`);
       })
       .catch((error) => {
         console.error('Error fetching audio notes:', error);
@@ -348,12 +464,20 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
       <audio ref={audioRef} src={audioUrl ?? undefined} />
 
       <div className='w-[70%] mx-auto my-6 relative'>
-        <canvas
-          ref={canvasRef}
-          width={600}
-          height={300}
-          style={{ marginTop: '20px', border: '1px solid #ccc' }}
-        />
+        <div style={{ height: '300px', position: 'relative' }}>
+          <canvas
+            ref={canvasRef}
+            style={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              border: '1px solid #ccc',
+              borderRadius: '8px'
+            }}
+          />
+        </div>
         <h1
           className="absolute right-4 top-3 inline-block text-4xl font-extrabold text-indigo-500 drop-shadow-sm drop-shadow-indigo-500"
           style={{

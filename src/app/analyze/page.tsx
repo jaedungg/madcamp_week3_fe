@@ -9,8 +9,8 @@ const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder')
 
 export default function PitchAnalyzerPage() {
   const [ showRecorder, setShowRecorder ] = useState(false);
-  const [uuid, setUuid] = useState<string | null>("a18227da-1687-45e9-bcbc-4a2eaa01aae6");
-  const [audioUrl, setAudioUrl] = useState<string | null>("/downloads/a18227da-1687-45e9-bcbc-4a2eaa01aae6.mp3");
+  const [uuid, setUuid] = useState<string | null>("630b2fa0-4c41-4554-b484-b4de988806fc");
+  const [audioUrl, setAudioUrl] = useState<string | null>("/downloads/630b2fa0-4c41-4554-b484-b4de988806fc.mp3");
   const [userAudioUrl, setUserAudioUrl] = useState<string | null>(null);
 
 
