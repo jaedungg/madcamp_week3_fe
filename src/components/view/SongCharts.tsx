@@ -34,7 +34,7 @@ export default function SongCharts({ genieChart }: SongChartsProps) {
   return (
     <div className="space-y-2">
       {/* 상단 탭 + 필터 */}
-      <h2 className="text-xl font-bold mb-2">Charts</h2>
+      <h2 className="text-2xl font-bold mb-2">Charts</h2>
       <div className="flex justify-between items-center space-y-2">
         <Tabs
           activeKey={activeTab}

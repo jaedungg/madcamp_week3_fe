@@ -3,6 +3,7 @@
 import { Dispatch, SetStateAction, use, useEffect, useRef, useState } from 'react';
 import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
 import { Button, Card, Collapse, Progress, Typography } from 'antd';
+import { AudioOutlined, AudioFilled, StopOutlined } from '@ant-design/icons';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -58,7 +59,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
               {
                 label: 'Original Pitch (Hz)',
                 data: [],
-                borderColor: 'orange',
+                borderColor: 'lightgray',
                 fill: false,
                 pointRadius: 0,
               },
@@ -69,16 +70,11 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
             responsive: true,
             plugins: {
               legend: {
-                display: true,
+                display: false,
                 labels: {
                   color: '#333',
                   font: { size: 12 }
                 }
-              },
-              tooltip: {
-                backgroundColor: '#222',
-                titleColor: '#fff',
-                bodyColor: '#ccc',
               },
             },
             scales: {
@@ -102,14 +98,13 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
                   display: false, // ❌ 가로선 안보이게
                 },
                 ticks: {
-                  color: '#666',
-                  font: { size: 10 },
+                  display: false,
                 },
                 title: {
                   display: false, // ❌ 제목 숨김
                 },
                 min: 0,
-                max: 1500,
+                max: 1000,
               },
             },
           }
@@ -271,10 +266,10 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
 
   return (
     <div>
-      <h1 className='text-xl font-bold mb-4'>🎼 실시간 피치 분석기</h1>
+      <h1 className='text-2xl font-bold mb-4'>실시간 피치 분석기</h1>
       <audio ref={audioRef} src={audioUrl ?? undefined} />
 
-      <div className='w-[80%] mx-auto mb-4'>
+      <div className='w-[60%] mx-auto mb-4'>
         <canvas
           ref={canvasRef}
           width={600}
@@ -285,10 +280,6 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
 
       {currentLyric && (
         <div> 
-        {/* <div 
-        className="text-center my-4 text-2xl font-bold transition-all duration-200 animate-pulse text-white drop-shadow-lg drop-shadow-indigo-500">
-          {currentLyric}
-        </div>  */}
         <h1
           className="text-center my-4 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
           style={{
@@ -303,12 +294,24 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
         </div>
         
       )}
+      <Button
+        type="primary"
+        icon={isRecording ? <AudioFilled /> : <AudioOutlined />}
+        size="large"
+        onClick={handleRecord}
+        style={{
+          backgroundColor: '#6366F1', // indigo-400에 해당
+          borderColor: '#6366F1',
+          maxWidth: 200,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+        className='ml-auto mr-2'
+      >
+        {isRecording ? '녹음 종료' : '실시간 피치 녹음'}
+      </Button>
 
-      <button 
-        className={`flex flex-1 items-center bg-indigo-400 justify-center p-3 px-4 rounded-lg text-lg text-white transition cursor-pointer`}
-        onClick={handleRecord}>
-        {isRecording ? '녹음 종료 & 분석' : '🎙 실시간 피치 녹음'}
-      </button>
     </div>
   );
 }

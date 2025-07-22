@@ -9,13 +9,13 @@ const PitchRecorder = dynamic(() => import('@/components/analyze/PitchRecorder')
 
 export default function PitchAnalyzerPage() {
   const [ showRecorder, setShowRecorder ] = useState(false);
-  const [uuid, setUuid] = useState<string | null>("36eb6d5c-a8a9-42a2-bb4a-dea92f3a5103");
-  const [audioUrl, setAudioUrl] = useState<string | null>("/downloads/36eb6d5c-a8a9-42a2-bb4a-dea92f3a5103.mp3");
+  const [uuid, setUuid] = useState<string | null>("a8f4c0f0-f213-496b-9cab-8a669243eae5");
+  const [audioUrl, setAudioUrl] = useState<string | null>("/downloads/a8f4c0f0-f213-496b-9cab-8a669243eae5.mp3");
   const [userAudioUrl, setUserAudioUrl] = useState<string | null>(null);
 
 
   return (
-    <div className="font-sans flex flex-col h-full w-full space-y-12" >
+    <div className="font-sans flex flex-col h-full w-full space-y-6" >
       {!showRecorder && <MRLoader 
         setShowRecorderAction={setShowRecorder}
         uuid={uuid}
