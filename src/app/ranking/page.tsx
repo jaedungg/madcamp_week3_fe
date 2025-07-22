@@ -1,82 +1,237 @@
 'use client';
+import { useUser } from '@/context/UserContext';
+import { useState, useEffect } from 'react';
+import {
+  Button,
+  Table,
+  Avatar,
+  Card,
+  Typography,
+  Tag,
+  Spin,
+  message,
+} from 'antd';
+import {
+  CrownFilled,
+  UserOutlined,
+  ArrowLeftOutlined,
+} from '@ant-design/icons';
 
-import { Button, Table, Avatar } from 'antd';
-import { CrownFilled } from '@ant-design/icons';
-import { UserOutlined } from '@ant-design/icons';
+const { Title, Paragraph } = Typography;
 
-const dataSource = [
-  { key: '1', rank: 1, name: '유저A', score: 98 },
-  { key: '2', rank: 2, name: '유저B', score: 95 },
-  { key: '3', rank: 3, name: '유저C', score: 92 },
-  { key: '4', rank: 4, name: '유저D', score: 88 },
-  { key: '5', rank: 5, name: '유저E', score: 85 },
-];
+type UserRecord = {
+  recordid: number;
+  userid: string;
+  musicid: string; // string으로 변경
+  score: number;
+  audio_url: string;
+  pitch_vector: string;
+  onset_times: string;
+  created_at: string;
+  title: string; // 곡명
+  artist: string; // 가수명
+};
 
 const columns = [
   {
     title: '순위',
-    dataIndex: 'rank',
-    key: 'rank',
-    render: (rank: number) =>
-      rank === 1 ? <CrownFilled className="text-yellow-500 text-lg" /> : rank,
+    dataIndex: 'ranking', // api에서 순위 필드는 'ranking' 입니다.
+    key: 'ranking',
+    render: (ranking: number) =>
+      ranking === 1 ? (
+        <CrownFilled style={{ color: '#faad14', fontSize: 16 }} />
+      ) : (
+        ranking
+      ),
+    width: 60,
+    align: 'center' as const,
   },
   {
     title: '닉네임',
-    dataIndex: 'name',
-    key: 'name',
-    render: (name: string) => (
-      <div className="flex items-center gap-2">
-        <Avatar src={`/avatars/${name}.png`} />
-        <span>{name}</span>
+    dataIndex: 'userid', // api에서는 닉네임 대신 userid 필드를 사용합니다.
+    key: 'userid',
+    render: (userid: string) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Avatar size="small" icon={<UserOutlined />} />
+        <span>{userid}</span>
       </div>
     ),
+    width: 120,
   },
   {
     title: '점수',
     dataIndex: 'score',
     key: 'score',
-    render: (score: number) => <span className="font-semibold">{score}</span>,
+    render: (score: number) => <span style={{ fontWeight: 600 }}>{score}</span>,
+    width: 80,
+    align: 'center' as const,
   },
 ];
+const beurl = 'http://172.20.12.58:80';
+export default function UserSongsAndRankingPage() {
+  const { userid } = useUser();
+  const [myRecords, setMyRecords] = useState<UserRecord[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null); // string
 
-export default function RankingPage() {
-  return (
-    <div className="max-w-4xl mx-auto py-10 space-y-10">
-      {/* 상단 정보 */}
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">🎤 노래방 랭킹</h1>
-        <p className="text-gray-500">현재 124명이 참여했습니다</p>
-      </div>
+  const [ranking, setRanking] = useState<
+    Array<{ key: string; ranking: number; userid: string; score: number }>
+  >([]);
+  const [loadingRanking, setLoadingRanking] = useState(false);
 
-      {/* TOP 3 */}
-      <div className="grid grid-cols-3 gap-4">
-        {dataSource.slice(0, 3).map((user) => (
-          <div
-            key={user.key}
-            className="bg-indigo-100 p-4 py-6 rounded-xl text-center shadow-md"
-          >
-            {/* <Avatar size={64} src={`/avatars/${user.name}.png`} /> */}
-            <Avatar size={64} icon={<UserOutlined/>} />
-            <h2 className="text-xl font-bold mt-2">{user.name}</h2>
-            <p className="text-lg text-indigo-800 font-semibold">{user.score} 점</p>
+  // 내가 부른 노래 리스트 가져오기 (userid 기준 전체 데이터)
+  useEffect(() => {
+    async function fetchMyRecords() {
+      setLoadingRecords(true);
+      try {
+        const res = await fetch(beurl + '/userid_record_info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userid }),
+        });
+        if (!res.ok) throw new Error('기록 불러오기 실패: ' + res.statusText);
+        const data = await res.json();
+        setMyRecords(data);
+      } catch (e: any) {
+        message.error(e.message || '불러오기 실패');
+      } finally {
+        setLoadingRecords(false);
+      }
+    }
+    fetchMyRecords();
+  }, [userid]);
+
+  // 선택된 곡의 랭킹 가져오기
+  useEffect(() => {
+    if (selectedSongId === null) return;
+
+    async function fetchRanking() {
+      setLoadingRanking(true);
+      try {
+        // GET 방식인데 body는 서버에 따라 안 받기도 하니 query param 예로 변경 가능
+        const res = await fetch(
+          beurl + `/ranks/${encodeURIComponent(selectedSongId as string)}`
+        );
+        if (!res.ok) throw new Error('랭킹 불러오기 실패: ' + res.statusText);
+        const data = await res.json();
+        setRanking(data);
+      } catch (e: any) {
+        message.error(e.message || '랭킹 불러오기 실패');
+      } finally {
+        setLoadingRanking(false);
+      }
+    }
+
+    fetchRanking();
+  }, [selectedSongId]);
+
+  // 내가 부른 곡 리스트 컴포넌트
+  function SongList() {
+    if (loadingRecords) return <Spin tip="로딩중..." />;
+
+    if (myRecords.length === 0)
+      return <Paragraph>내가 부른 노래가 없습니다.</Paragraph>;
+
+    // musicid 기준 최신 레코드만 남김
+    const uniqueSongs: { [key: string]: UserRecord } = {};
+    myRecords.forEach((rec) => {
+      const key = rec.musicid;
+      if (
+        !uniqueSongs[key] ||
+        new Date(rec.created_at) > new Date(uniqueSongs[key].created_at)
+      )
+        uniqueSongs[key] = rec;
+    });
+
+    const songList = Object.values(uniqueSongs).sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    return (
+      <Card>
+        <Title level={3}>🎶 내가 부른 노래 (최근순)</Title>
+        <div className="divide-y" style={{ fontSize: 15 }}>
+          {songList.map((song) => (
+            <div
+              key={song.musicid}
+              className="py-2 cursor-pointer hover:bg-indigo-50 transition rounded flex items-center gap-2"
+              onClick={() => setSelectedSongId(song.musicid)}
+              aria-label={`곡 ${song.title} 선택`}
+            >
+              <div className="font-bold" style={{ minWidth: 55 }}>
+                {song.title}
+              </div>
+              <span className="text-sm text-gray-400 ml-2">
+                {song.artist || '가수정보 없음'}
+              </span>
+              <span className="text-xs text-gray-400 ml-3">
+                {new Date(song.created_at).toLocaleDateString()}
+              </span>
+              <Tag color="blue" className="ml-auto mr-0">
+                내 점수 {song.score}
+              </Tag>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  // 랭킹 보여주는 컴포넌트
+  function RankingView() {
+    const selectedSong =
+      myRecords.find((r) => r.musicid === selectedSongId) ?? null;
+
+    return (
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <Button
+            icon={<ArrowLeftOutlined />}
+            type="text"
+            onClick={() => setSelectedSongId(null)}
+            style={{ fontSize: 18 }}
+            aria-label="이전 화면으로 돌아가기"
+          />
+          <div>
+            <Title
+              level={4}
+              style={{
+                display: 'inline',
+                margin: 0,
+                fontWeight: 700,
+                fontSize: 19,
+              }}
+            >
+              {selectedSong?.title || '노래'}
+            </Title>{' '}
+            <span style={{ marginLeft: 8, color: '#888', fontSize: 15 }}>
+              {selectedSong?.artist ?? ''}
+            </span>
+            <Tag color="green" style={{ marginLeft: 10, fontSize: 12 }}>
+              내 점수 {selectedSong?.score ?? '-'}
+            </Tag>
           </div>
-        ))}
-      </div>
+        </div>
+        {loadingRanking ? (
+          <Spin tip="랭킹 로딩 중..." />
+        ) : (
+          <Table
+            dataSource={ranking}
+            columns={columns}
+            pagination={false}
+            bordered
+            size="small"
+            locale={{ emptyText: '랭킹 데이터가 없습니다.' }}
+          />
+        )}
+      </Card>
+    );
+  }
 
-      {/* 전체 테이블 */}
-      <Table
-        dataSource={dataSource.slice(3)}
-        columns={columns}
-        pagination={false}
-        bordered
-      />
-
-      {/* 하단 버튼 */}
-      <div className="flex justify-center gap-4 pt-6">
-        <Button type="primary">내 점수 보기</Button>
-        <Button>다시 도전하기</Button>
-        <Button type="link">전체 랭킹 보기</Button>
-      </div>
+  return (
+    <div className="max-w-2xl mx-auto p-3 space-y-8">
+      {selectedSongId === null ? <SongList /> : <RankingView />}
     </div>
   );
 }
