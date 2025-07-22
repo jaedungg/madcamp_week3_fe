@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/context/UserContext';
 import { Dispatch, SetStateAction, use, useEffect, useRef, useState } from 'react';
 import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
 import { Button, Card, Collapse, Progress, Typography, Alert, Flex, Spin } from 'antd';
@@ -35,9 +36,9 @@ function calculateAccuracyLive(
     const ref = originalNotes[i];
     const user = userMidi[i];
     if (ref === null) continue; // 기준이 없으면 비교 안 함
-    if (user !== null) {
+    if (true) {
       total++;
-      if (Math.abs(ref - user) <= 1) {
+      if (user != null && Math.abs(ref - user) <= 5) {
         correct++;
       }
     }
@@ -47,6 +48,8 @@ function calculateAccuracyLive(
 }
 
 export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : PitchRecorderProps) {
+  const { userid } = useUser();
+  
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -164,11 +167,34 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
       isRecordingRef.current = false;
 
       mediaRecorderRef.current?.stop();
-      mediaRecorderRef.current!.onstop = () => {
+      mediaRecorderRef.current!.onstop = async () => {
         const audioBlob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
         const userUrl = URL.createObjectURL(audioBlob);
         setUserAudioUrlAction(userUrl);
-      };
+      
+        // 서버에 업로드 (FormData 사용)
+        const formData = new FormData();
+        formData.append('audio', audioBlob, `${uuid}.webm`);
+        formData.append('userid', userid); 
+        formData.append('musicid', uuid ?? '');
+        formData.append('score', String(score));
+
+        console.log("upload data: ", userid, uuid, String(score))
+      
+        try {
+          const res = await fetch('http://172.20.12.58:80/user_record', {
+            method: 'POST',
+            body: formData,
+          });
+      
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || '업로드 실패');
+          console.log('🎉 녹음 업로드 성공:', result);
+        } catch (err) {
+          console.error('🎤 녹음 업로드 에러:', err);
+          alert('녹음 업로드 중 오류가 발생했습니다.');
+        }
+      };      
 
       if (audioRef.current) {
         audioRef.current.pause();
