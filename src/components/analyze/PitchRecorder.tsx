@@ -2,7 +2,7 @@
 
 import { Dispatch, SetStateAction, use, useEffect, useRef, useState } from 'react';
 import { detectPitch } from '@/lib/util/pitchUtils'; // 오토코릴레이션 pitch detection 함수
-import { Button, Card, Collapse, Progress, Typography } from 'antd';
+import { Button, Card, Collapse, Progress, Typography, Alert, Flex, Spin } from 'antd';
 import { AudioOutlined, AudioFilled, StopOutlined } from '@ant-design/icons';
 import { Chart, registerables } from 'chart.js';
 
@@ -65,6 +65,8 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
 
   const [currentLyric, setCurrentLyric] = useState<string>('');
   const lyricsRef = useRef<{ start: number; duration: number; text: string }[]>([]);
+
+  const [isNoteFetched, setIsNoteFetched] = useState(false);
 
   // === Chart 초기화 ===
   useEffect(() => {
@@ -254,6 +256,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
       throw new Error('Failed to fetch audio notes');
     }
     const data = await response.json();
+    setIsNoteFetched(true);
     return data;
   };
 
@@ -302,11 +305,23 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     return () => clearInterval(interval);
   }, []);
 
+  const contentStyle: React.CSSProperties = {
+    padding: 80,
+    borderRadius: 12,
+  };
+
+  const content = <div style={contentStyle} />;
+
   return (
-    <div>
+    <div className='relative h-full w-full'>
+      {!isNoteFetched && (
+        <div className='absolute inset-0 flex items-center justify-center z-50 bg-white' style={{ minHeight: '100%' }}>
+          <Spin tip="Loading..." size="large">{content}</Spin>
+        </div>
+      )}
       <audio ref={audioRef} src={audioUrl ?? undefined} />
 
-      <div className='w-[60%] mx-auto my-6 relative'>
+      <div className='w-[70%] mx-auto my-6 relative'>
         <canvas
           ref={canvasRef}
           width={600}
@@ -325,10 +340,9 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
           {score} 점 
         </h1>
       </div>
-      <div className='h-8'> 
-        {currentLyric && (
+        {isRecording && (
           <h1
-            className="text-center my-4 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
+            className="h-8 text-center my-2 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
             style={{
               textShadow: `-1px -1px 0 #6366F1,
                            1px -1px 0 #6366F1,
@@ -339,8 +353,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
             {currentLyric}
           </h1>
         )}
-      </div>
-      <div className='flex flex-row justify-center mt-12 relative'>
+      <div className='flex flex-row justify-center mt-8 relative'>
 
         <Button
           type="primary"

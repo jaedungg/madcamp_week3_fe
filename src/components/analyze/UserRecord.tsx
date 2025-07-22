@@ -242,8 +242,8 @@ export default function UserRecord({uuid, audioUrl, userAudioUrl} : UserRecordPr
   return (
     <div>
     {userAudioUrl && (
-      <div className="flex flex-col gap-4 mt-4">
-        <Card title="🎙 유저 녹음 확인" bordered>
+      <div className="flex flex-col gap-2">
+        <Card title="🎙 유저 녹음 확인">
           <Button
             type="default"
             size="large"
@@ -255,7 +255,7 @@ export default function UserRecord({uuid, audioUrl, userAudioUrl} : UserRecordPr
           </Button>
         </Card>
 
-        <Card title="🎛️ 후처리 효과 선택" bordered>
+        <Card title="🎛️ 후처리 효과 선택">
           <Select
             value={selectedEffect}
             placeholder="적용할 효과를 선택하세요"
