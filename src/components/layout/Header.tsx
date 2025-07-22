@@ -1,7 +1,19 @@
+'use client';
 import { useUser } from '@/context/UserContext';
+import { useState, useEffect } from 'react';
+import { useProfileImage } from '@/context/ProfileImageContext';
 
 export default function Header() {
   const { userid } = useUser();
+  const { profileImageKey } = useProfileImage();
+
+  // 만약 userid가 변경됐을 때나 사용자 프로필 변경 후 imgUpdateKey 업데이트
+
+  // 프로필 사진 URL + 캐시 무효화용 쿼리 파라미터
+  const profileImgSrc = userid
+    ? `http://172.20.12.58:80/profile/${userid}?t=${profileImageKey}`
+    : '/images/profile.jpg';
+
   return (
     <header className="fixed bg-indigo-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-8 py-4">
       <div className="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5">
@@ -25,24 +37,18 @@ export default function Header() {
           />
         </svg>
         <div className="flex justify-start items-center gap-6 flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
-          {userid && <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
-            {userid}
-          </p>}
-          <img className="h-10 w-10 flex-grow-0 flex-shrink-0 rounded-full object-cover" src={userid ? `http://172.20.12.58:80/profile/${userid}` : "/images/profile.jpg"} />
+          {userid && (
+            <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
+              {userid}
+            </p>
+          )}
+          <img
+            className="h-10 w-10 flex-grow-0 flex-shrink-0 rounded-full object-cover"
+            src={profileImgSrc}
+            alt="프로필 사진"
+          />
         </div>
       </div>
     </header>
-    // <header className="bg-primary text-white p-4">
-    //   <div className="container mx-auto flex justify-between items-center">
-    //     <h1 className="text-2xl font-bold">My Application</h1>
-    //     <nav>
-    //       <ul className="flex space-x-4">
-    //         <li><a href="/" className="hover:text-primary-light">Home</a></li>
-    //         <li><a href="/about" className="hover:text-primary-light">About</a></li>
-    //         <li><a href="/contact" className="hover:text-primary-light">Contact</a></li>
-    //       </ul>
-    //     </nav>
-    //   </div>
-    // </header>
-  )
+  );
 }
