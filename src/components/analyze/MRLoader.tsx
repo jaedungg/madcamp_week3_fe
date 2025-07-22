@@ -13,7 +13,13 @@ interface MRLoaderProps {
   setAudioUrlAction: Dispatch<SetStateAction<string | null>>;
 }
 
-export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUuidAction, setAudioUrlAction} : MRLoaderProps ) {
+export default function MRLoader({
+  setShowRecorderAction,
+  uuid,
+  audioUrl,
+  setUuidAction,
+  setAudioUrlAction,
+}: MRLoaderProps) {
   const [method, setMethod] = useState<'youtube' | 'file' | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -104,15 +110,15 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
   const handleDownload = async () => {
     if (!uuid) return;
-    
+
     const res = await fetch(`/api/accompaniment?uuid=${uuid}`);
     const data = await res.json();
 
     console.log('Response data (audioUrl):', data);
     if (data.path) setAudioUrlAction(data.path);
   };
-  
-  useEffect (() => {
+
+  useEffect(() => {
     if (uuid) {
       handleDownload();
     }
