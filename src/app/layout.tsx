@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { ConfigProvider } from 'antd';
 import { UserProvider } from '@/context/UserContext';
 import { ProfileImageProvider } from '@/context/ProfileImageContext';
+import { NicknameProvider } from '@/context/NicknameContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,22 +36,24 @@ export default function RootLayout({
       >
         <UserProvider>
           <ProfileImageProvider>
-            <ConfigProvider
-              theme={{
-                token: {
-                  // Seed Token
-                  colorPrimary: '#6366f1',
-                },
-              }}
-            >
-              <Header />
-              <div className="flex h-screen pt-16 overflow-hidden">
-                <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-                <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
-                  {children}
+            <NicknameProvider>
+              <ConfigProvider
+                theme={{
+                  token: {
+                    // Seed Token
+                    colorPrimary: '#6366f1',
+                  },
+                }}
+              >
+                <Header />
+                <div className="flex h-screen pt-16 overflow-hidden">
+                  <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+                  <div className="ml-[240px] px-5 py-5 w-full h-full overflow-y-auto">
+                    {children}
+                  </div>
                 </div>
-              </div>
-            </ConfigProvider>
+              </ConfigProvider>
+            </NicknameProvider>
           </ProfileImageProvider>
         </UserProvider>
       </body>

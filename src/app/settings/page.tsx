@@ -1,34 +1,29 @@
 'use client';
+
 import { useUser } from '@/context/UserContext';
-import { useState, useEffect } from 'react';
 import { useProfileImage } from '@/context/ProfileImageContext';
+import { useNickname } from '@/context/NicknameContext';
+import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
   const { userid } = useUser();
-  // URL 변경을 위해 별도 쿼리스트링 관리
-  const [imgUpdateKey, setImgUpdateKey] = useState(Date.now());
-  const [nickname, setNickname] = useState('');
-  const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
+  const { refreshProfileImage } = useProfileImage();
+  const { setNickname } = useNickname();
+
+  const [nicknameLocal, setNicknameLocal] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isDark, setIsDark] = useState(false);
-  const { refreshProfileImage } = useProfileImage();
-  // 프로필 및 테마 초기화
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const response = await fetch('/api/user/' + userid, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch user profile');
-      const data = await response.json();
 
+  useEffect(() => {
+    async function fetchProfile() {
+      const res = await fetch(`/api/user/${userid}`);
+      if (!res.ok) throw new Error('Failed to fetch user profile');
+      const data = await res.json();
+      setNicknameLocal(data.nickname);
       setNickname(data.nickname);
-      // 항상 base URL 저장, 캐시 방지 쿼리 적용할 것!
       setThumbnailUrl(`http://172.20.12.58:80/profile/${userid}`);
-      setImgUpdateKey(Date.now()); // 초기화시에도 최신 캐시방지
-    };
+    }
     fetchProfile();
 
     const savedTheme = localStorage.getItem('theme');
@@ -36,22 +31,27 @@ export default function SettingsPage() {
       setIsDark(true);
       document.documentElement.classList.add('dark');
     }
-  }, [userid]);
+  }, [userid, setNickname]);
 
   const handleNicknameChange = async () => {
-    const res = await fetch(`/api/user/${userid}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: nickname }),
-    });
-    if (!res.ok) alert('닉네임 변경 실패');
-    else alert('닉네임 변경 완료');
+    try {
+      const res = await fetch(`/api/user/${userid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: nicknameLocal }),
+      });
+
+      if (!res.ok) throw new Error('닉네임 변경 실패');
+      alert('닉네임 변경 완료');
+      setNickname(nicknameLocal); // Context에 반영해 헤더 자동 갱신
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '닉네임 변경 실패');
+    }
   };
 
   const handleImageUpload = async () => {
     if (!file) return alert('파일을 선택해주세요');
     try {
-      // Flask 업로드
       const formData = new FormData();
       formData.append('file', file);
       formData.append('userid', userid);
@@ -62,24 +62,22 @@ export default function SettingsPage() {
       });
       const text = await uploadRes.text();
       const uploadData = JSON.parse(text);
+
       const profile_url = uploadData.profile_url;
 
-      // PATCH로 profile_url DB에 반영
       const res = await fetch(`/api/user/${userid}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_url: profile_url }),
+        body: JSON.stringify({ profile_url }),
       });
 
-      const result = await res.json();
       if (!res.ok) {
+        const result = await res.json();
         alert('프로필 사진 변경 실패: ' + (result?.error || '서버 오류'));
       } else {
         alert('프로필 사진 변경 성공!');
-        // 캐시 강제 무효화(t 캐시파라미터)로 변경 즉시 반영
-        setThumbnailUrl(`http://172.20.12.58:80/profile/${userid}`);
-        refreshProfileImage();
-        setImgUpdateKey(Date.now());
+        setThumbnailUrl(profile_url);
+        refreshProfileImage(); // Context에 반영해 프로필 이미지 즉시 갱신
       }
     } catch (error) {
       console.error('에러 발생:', error);
@@ -93,11 +91,6 @@ export default function SettingsPage() {
     document.documentElement.classList.toggle('dark', enabled);
   };
 
-  // 실제 src에 캐싱 무력화를 위한 쿼리파라미터 추가
-  const profileImgSrc = thumbnailUrl
-    ? `${thumbnailUrl}?t=${imgUpdateKey}`
-    : '/images/profile.jpg';
-
   return (
     <div className="max-w-xl mx-auto p-6 space-y-10 text-gray-900 dark:text-white">
       <h1 className="text-2xl font-bold">🛠️ 설정</h1>
@@ -105,7 +98,11 @@ export default function SettingsPage() {
       {/* 프로필 섹션 */}
       <div className="flex items-center gap-6">
         <img
-          src={profileImgSrc}
+          src={
+            thumbnailUrl
+              ? `${thumbnailUrl}?t=${Date.now()}`
+              : '/images/profile.jpg'
+          }
           alt="프로필 사진"
           className="w-24 h-24 rounded-full object-cover border"
         />
@@ -129,8 +126,8 @@ export default function SettingsPage() {
       <div className="flex items-center gap-4">
         <input
           className="flex-1 border border-gray-300 px-3 py-2 rounded text-black dark:text-white dark:bg-gray-800"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
+          value={nicknameLocal}
+          onChange={(e) => setNicknameLocal(e.target.value)}
           placeholder="닉네임 입력"
         />
         <button

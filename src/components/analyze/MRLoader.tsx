@@ -12,7 +12,13 @@ interface MRLoaderProps {
   setAudioUrlAction: Dispatch<SetStateAction<string | null>>;
 }
 
-export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUuidAction, setAudioUrlAction} : MRLoaderProps ) {
+export default function MRLoader({
+  setShowRecorderAction,
+  uuid,
+  audioUrl,
+  setUuidAction,
+  setAudioUrlAction,
+}: MRLoaderProps) {
   const [method, setMethod] = useState<'youtube' | 'file' | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -40,7 +46,6 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
       setUuidAction(data.uuid);
       setIsSeparating(false);
     } else if (youtubeUrl) {
-
       const res = await fetch('/api/separate', {
         method: 'POST',
         body: youtubeUrl,
@@ -58,15 +63,15 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
   const handleDownload = async () => {
     if (!uuid) return;
-    
+
     const res = await fetch(`/api/accompaniment?uuid=${uuid}`);
     const data = await res.json();
 
     console.log('Response data (audioUrl):', data);
     if (data.path) setAudioUrlAction(data.path);
   };
-  
-  useEffect (() => {
+
+  useEffect(() => {
     if (uuid) {
       handleDownload();
     }
@@ -74,9 +79,8 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
   return (
     <div className="max-w-4xl mx-auto my-auto space-y-10">
-
       {/* 방법 선택 */}
-      <h1 className='text-xl font-bold mb-4'>
+      <h1 className="text-xl font-bold mb-4">
         YouTube 링크를 입력하거나 .mp3 파일을 업로드하세요.
       </h1>
 
@@ -85,18 +89,18 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
           onClick={() => setMethod('youtube')}
           className={`flex flex-1 items-center justify-center p-3 rounded-lg text-lg transition cursor-pointer ${
             method === 'youtube'
-              ? "text-black bg-indigo-300"
-              : "bg-gray-100 text-black hover:bg-gray-200"
+              ? 'text-black bg-indigo-300'
+              : 'bg-gray-100 text-black hover:bg-gray-200'
           }`}
         >
-          📺  YouTube 링크
+          📺 YouTube 링크
         </button>
         <button
           onClick={() => setMethod('file')}
           className={`flex flex-1 items-center justify-center p-3 rounded-lg text-lg transition cursor-pointer ${
             method === 'file'
-              ? "text-black bg-indigo-300"
-              : "bg-gray-100 text-black hover:bg-gray-200"
+              ? 'text-black bg-indigo-300'
+              : 'bg-gray-100 text-black hover:bg-gray-200'
           }`}
         >
           🎵파일 업로드
@@ -130,17 +134,24 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
       <button
         onClick={handleSeparation}
-        className={`flex w-full items-center justify-center p-3 rounded-lg text-lg ${isSeparating ? "bg-indigo-400" : "bg-indigo-300"} transition hover:bg-indigo-400 cursor-pointer`}
+        className={`flex w-full items-center justify-center p-3 rounded-lg text-lg ${
+          isSeparating ? 'bg-indigo-400' : 'bg-indigo-300'
+        } transition hover:bg-indigo-400 cursor-pointer`}
       >
-        {isSeparating ? <p className='flex gap-3 items-center'><LoadingOutlined /> 분리 중</p> : '🔊 MR 분리하기'}
-
+        {isSeparating ? (
+          <p className="flex gap-3 items-center">
+            <LoadingOutlined /> 분리 중
+          </p>
+        ) : (
+          '🔊 MR 분리하기'
+        )}
       </button>
-      
+
       {audioUrl && (
         <div className="mt-4 space-y-2 text-lg">
           <p className="font-semibold text-xl">✅ MR 분리 완료</p>
           {audioUrl && (
-            <div className='my-4 space-y-2 text-xl font-semibold'>
+            <div className="my-4 space-y-2 text-xl font-semibold">
               <audio controls src={audioUrl} style={{ width: '100%' }} />
             </div>
           )}

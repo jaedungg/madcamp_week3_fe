@@ -2,12 +2,12 @@
 import { useUser } from '@/context/UserContext';
 import { useState, useEffect } from 'react';
 import { useProfileImage } from '@/context/ProfileImageContext';
+import { useNickname } from '@/context/NicknameContext';
 
 export default function Header() {
   const { userid } = useUser();
   const { profileImageKey } = useProfileImage();
-
-  // 만약 userid가 변경됐을 때나 사용자 프로필 변경 후 imgUpdateKey 업데이트
+  const { nickname } = useNickname();
 
   // 프로필 사진 URL + 캐시 무효화용 쿼리 파라미터
   const profileImgSrc = userid
@@ -39,7 +39,7 @@ export default function Header() {
         <div className="flex justify-start items-center gap-6 flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
           {userid && (
             <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left capitalize text-white">
-              {userid}
+              {nickname || userid}
             </p>
           )}
           <img
