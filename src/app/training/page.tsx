@@ -3,6 +3,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button, Card, List, Tag, Typography, Space } from 'antd';
 import { YoutubeOutlined, RocketOutlined } from '@ant-design/icons';
+import TrainingContents from '@/constants/TrainingContents';
+import Link from 'next/link';
 
 const { Paragraph } = Typography;
 
@@ -177,50 +179,48 @@ function HoverJumpGame({ onClose }: { onClose: () => void }) {
     return (
       <div style={{ padding: 36, textAlign: 'center', fontSize: 17 }}>
         {!gameOver ? (
-          <>
+          <div className='flex flex-col items-center'>
+            <div style={{ marginBottom: 18, color: '#555', fontSize: 16 }}>
+              목청으로 공을 띄우세요 <br /> 장애물에 닿으면 GAME OVER!
+            </div>
             <Button
               type="primary"
               size="large"
-              style={{ fontSize: 16, padding: '10px 28px' }}
               onClick={start}
             >
               게임 시작 (마이크 필요)
             </Button>
-            <div style={{ marginTop: 18, color: '#555', fontSize: 16 }}>
-              목청으로 공을 띄우세요 <br /> 장애물에 닿으면 GAME OVER!
-            </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div className='flex flex-col items-center gap-6'>
             <div
               style={{
                 color: '#da143b',
                 fontWeight: 800,
-                fontSize: 21,
-                marginBottom: 12,
+                fontSize: 22,
               }}
             >
               GAME OVER
             </div>
-            <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 13 }}>
+            <div style={{ fontWeight: 700, fontSize: 18 }}>
               점수: {score}
             </div>
-            <Button
-              type="primary"
-              size="large"
-              onClick={start}
-              style={{ fontSize: 15, padding: '10px 28px' }}
-            >
-              다시하기
-            </Button>
-            <Button
-              style={{ marginLeft: 22, fontSize: 15 }}
-              onClick={onClose}
-              ghost
-            >
-              닫기
-            </Button>
-          </>
+            <div className='flex flex-row gap-2'>
+              <Button
+                type="primary"
+                size="large"
+                onClick={start}
+              >
+                다시하기
+              </Button>
+              <Button
+                size="large"
+                onClick={onClose}
+              >
+                닫기
+              </Button>
+            </div>
+          </div>
         )}
         {!gameOver && (
           <Button
@@ -347,108 +347,63 @@ const SongAnalysisPage = () => {
       style={{ fontSize: 15 }}
     >
       <Card
-        title={<span style={{ fontSize: 18 }}>🔍 맞춤형 추천 루틴</span>}
-        bordered
-        style={{
-          marginBottom: 14,
-          marginTop: 7,
-          paddingTop: 6,
-          paddingBottom: 3,
-        }}
-        bodyStyle={{ padding: '18px 18px 14px 18px' }}
+        title={
+          <span className="text-lg font-bold">🔍 맞춤형 추천 루틴</span>
+        }
+        style={{ marginBottom: 16 }}
       >
         <Space direction="vertical" size={12}>
-          <Paragraph style={{ fontSize: 15, margin: 0 }}>
-            🎯 체계적인 발성 및 음정 연습 →{' '}
-            <Tag color="blue">추천 유튜브 콘텐츠</Tag>
+          <Paragraph style={{ fontSize: 16, margin: 0 }}>
+            🎯 체계적인 발성 및 음정 연습 → <Tag color="blue">추천 유튜브 콘텐츠</Tag>
           </Paragraph>
-          <Paragraph style={{ fontSize: 15, margin: 0 }}>
+          <Paragraph style={{ fontSize: 16, margin: 0 }}>
             🎯 박자 및 성량 훈련 → <Tag color="purple">리듬 목청 점프 게임</Tag>
           </Paragraph>
         </Space>
       </Card>
+
       <Card
-        title={<span style={{ fontSize: 18 }}>🎥 추천 유튜브 콘텐츠</span>}
-        style={{
-          marginTop: 5,
-          marginBottom: 8,
-          paddingTop: 4,
-          paddingBottom: 2,
-        }}
-        bodyStyle={{ padding: '16px 14px 13px 14px' }}
+        title={
+          <p>
+            <YoutubeOutlined style={{ color: 'red' }} />
+            <span className="text-lg font-bold ml-1"> 추천 유튜브 콘텐츠</span>
+          </p>
+        }
+        style={{ marginBottom: 16 }}
       >
         <List
-          dataSource={[
-            {
-              title: '스케일 발성 연습 ~3옥 도',
-              url: 'https://www.youtube.com/watch?v=7y34SdtmuZE&t=115s',
-            },
-            {
-              title: '호흡법 연습 STEP1 20초',
-              url: 'https://youtu.be/x6y6SPzCQXQ?si=g2IpSi7RmiLW1seh',
-            },
-            {
-              title: '호흡법 연습 STEP2 30초',
-              url: 'https://www.youtube.com/watch?v=YdBUnWJBYAo',
-            },
-            {
-              title: '호흡법 연습 STEP3 40초',
-              url: 'https://www.youtube.com/watch?v=bpQbgKH_1Qs',
-            },
-            {
-              title: '립트릴(Lip Trill) 발성 연습',
-              url: 'https://www.youtube.com/watch?v=Qu7307ilTSE',
-            },
-            {
-              title: '허밍 발성 연습',
-              url: 'https://www.youtube.com/watch?v=EgmRjfKj3d4',
-            },
-            {
-              title: '편하게 고음 하는 원리',
-              url: 'https://youtu.be/oAmSaeCV19s?si=LjBwIW4HKBh4Qwoy',
-            },
-            {
-              title: '30초 고음 뚫기',
-              url: 'https://youtu.be/JB-wxRAt5TU?si=oNT14ud5xBxpSD8K',
-            },
-          ]}
+          itemLayout="horizontal"
+          dataSource={TrainingContents}
           renderItem={(item) => (
-            <List.Item style={{ fontSize: 15, padding: 4 }}>
-              <a
+            <List.Item>
+              <Link
                 href={item.url}
                 target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: 15 }}
+                className="text-base hover:underline"
               >
-                <YoutubeOutlined style={{ fontSize: 18 }} /> {item.title}
-              </a>
+                {item.title}
+              </Link>
             </List.Item>
           )}
         />
       </Card>
+
       <Card
-        title={<span style={{ fontSize: 18 }}>🎮 리듬 목청 점프 게임</span>}
-        style={{
-          marginTop: 8,
-          paddingTop: 4,
-          paddingBottom: 2,
-        }}
-        bodyStyle={{ padding: '12px 13px 8px 13px' }}
+        title={<span className="text-lg font-bold">🎮 리듬 목청 점프 게임</span>}
       >
-        <Paragraph style={{ fontSize: 15, marginBottom: 2 }}>
-          <b>소리를 내면 공이 위에 부양</b>하며 장애물을 피해보세요!
-          <br />
-          <span style={{ fontSize: 14 }}>장애물에 닿으면 GAME OVER.</span>
-          <Tag color="magenta" style={{ fontSize: 13, marginLeft: 7 }}>
+        <Paragraph style={{ fontSize: 16, marginBottom: 8 }}>
+          <b>소리를 내면 공이 위에 부양</b>하며 장애물을 피해보세요! <br />
+          <span>장애물에 닿으면 GAME OVER.</span>
+          <Tag color="magenta" style={{ marginLeft: 7 }}>
             마이크 필요
           </Tag>
         </Paragraph>
+
         {!showGame && (
           <Button
             icon={<RocketOutlined />}
             type="primary"
-            size="middle"
-            style={{ fontSize: 15 }}
+            size="large"
             onClick={() => setShowGame(true)}
           >
             게임 시작
