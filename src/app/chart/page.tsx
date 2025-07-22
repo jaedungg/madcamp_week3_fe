@@ -26,9 +26,9 @@ export default  function ChartPage() {
   }, []);
 
   return (
-    <div className="font-sans flex flex-col h-screen w-full space-y-12">
+    <div className="font-sans flex flex-col h-full w-full space-y-12">
       <SongCharts genieChart={chartData}/>
-      <CategoryGallery />
+      {/* <CategoryGallery /> */}
     </div>
   );
 }
