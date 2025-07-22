@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <div className="font-sans items-center justify-items-center min-h-screen">
       Hello World!
