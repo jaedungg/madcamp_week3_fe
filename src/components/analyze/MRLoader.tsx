@@ -1,6 +1,6 @@
 'use client';
 
-import { LoadingOutlined, UploadOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CheckCircleTwoTone, LoadingOutlined, UploadOutlined } from '@ant-design/icons';
 import { Dispatch, useEffect } from 'react';
 import { SetStateAction, useState } from 'react';
 import { Input, Form, Select, Upload } from 'antd';
@@ -134,11 +134,11 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
 
   return (
-    <div className="max-w-4xl mx-auto my-auto space-y-10 text-base">
+    <div className="max-w-4xl mx-auto my-auto space-y-10 text-sm">
       <div>
         
         {/* 방법 선택 */}
-        <h1 className='text-xl font-bold mb-4'>
+        <h1 className='text-lg font-bold mb-4 px-8'>
           YouTube 링크를 입력하거나 .mp3 파일을 업로드하세요.
         </h1>
 
@@ -217,8 +217,11 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
                 <Option value="댄스">댄스</Option>
                 <Option value="힙합">힙합</Option>
                 <Option value="락">락</Option>
+                <Option value="밴드">밴드</Option>
                 <Option value="팝">팝</Option>
+                <Option value="R&B">R&B</Option>
                 <Option value="인디">인디</Option>
+                <Option value="트로트">트로트</Option>
                 <Option value="기타">기타</Option>
               </Select>
             </Form.Item>
@@ -237,10 +240,10 @@ export default function MRLoader( {setShowRecorderAction, uuid, audioUrl, setUui
 
       
       {audioUrl && (
-        <div className="mt-4 space-y-2 ">
-          <p className="font-semibold text-xl">✅ MR 분리 완료</p>
+        <div className="mt-10">
+          <p className="flex flex-row font-semibold text-lg items-center gap-1.5 justify-center"><CheckCircleTwoTone twoToneColor="#eb2f96"/> MR 분리 완료</p>
           {audioUrl && (
-            <div className='my-4 space-y-2 text-xl font-semibold'>
+            <div className='my-4 space-y-2 text-lg font-semibold'>
               <audio controls src={audioUrl} style={{ width: '100%' }} />
             </div>
           )}

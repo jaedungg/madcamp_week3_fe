@@ -16,31 +16,57 @@ interface PitchRecorderProps {
   setUserAudioUrlAction: Dispatch<SetStateAction<string | null>>;
 }
 
+function hzToMidi(hz: number | null): number | null {
+  if (!hz || hz <= 0) return null;
+  return Math.round(69 + 12 * Math.log2(hz / 440));
+}
+
+function calculateAccuracyLive(
+  userPitchHz: (number | null)[],
+  originalNotes: (number | null)[]
+): number {
+  const userMidi = userPitchHz.map(hzToMidi);
+  const minLength = Math.min(userMidi.length, originalNotes.length);
+
+  let correct = 0;
+  let total = 0;
+
+  for (let i = 0; i < minLength; i++) {
+    const ref = originalNotes[i];
+    const user = userMidi[i];
+    if (ref === null) continue; // 기준이 없으면 비교 안 함
+    if (user !== null) {
+      total++;
+      if (Math.abs(ref - user) <= 1) {
+        correct++;
+      }
+    }
+  }
+
+  return total === 0 ? 0 : Math.round((correct / total) * 100);
+}
+
 export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : PitchRecorderProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
-  // 실시간 데이터 추적용 ref
   const pitchDataRef = useRef<(number | null)[]>([]);
   const timeStampsRef = useRef<number[]>([]);
-  const tickRef = useRef(0);
+  const startTimeRef = useRef<number>(0);
   const isRecordingRef = useRef(false);
-  // 오디오 재생
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  // 가사 표시
-  const [currentLyric, setCurrentLyric] = useState<string>('');
-  const lyricsRef = useRef<{ start: number; duration: number; text: string }[]>([]);
-  // 유저 노래 녹음
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
-  const [pitchData, setPitchData] = useState<(number | null)[]>([]);
-  const [originalPitch, setOriginalPitch] = useState<(number | null)[]>([]);
+  const [score, setScore] = useState(0);
   const [originalNotes, setOriginalNotes] = useState<(number | null)[]>([]);
-  const [timeStamps, setTimeStamps] = useState<number[]>([]);
 
-  // Chart 초기화
+  const [currentLyric, setCurrentLyric] = useState<string>('');
+  const lyricsRef = useRef<{ start: number; duration: number; text: string }[]>([]);
+
+  // === Chart 초기화 ===
   useEffect(() => {
     if (canvasRef.current && !chartRef.current) {
       const ctx = canvasRef.current.getContext('2d');
@@ -58,9 +84,9 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
                 pointRadius: 0,
               },
               {
-                label: 'Original Pitch (Hz)',
+                label: 'Original Note (MIDI)',
                 data: [],
-                borderColor: 'lightgray',
+                borderColor: 'gray',
                 fill: false,
                 pointRadius: 0,
               },
@@ -72,119 +98,101 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
             plugins: {
               legend: {
                 display: false,
-                labels: {
-                  color: '#333',
-                  font: { size: 12 }
-                }
               },
             },
             scales: {
               x: {
-                grid: {
-                  display: false,
-                },
+                grid: { display: false },
                 ticks: {
+                  display: false,
                   color: '#666',
                   font: { size: 10 },
-                  maxTicksLimit: 2, // ❗ 눈금 수 제한
-                  // callback: (value) => `${(Number(value) / 1000).toFixed(1)}s`, // 숫자 포맷
-                  callback: (value) => `${value}s`, // 숫자 포맷
-                },
-                title: {
-                  display: false, // ❌ 제목 숨김
+                  callback: (value) => `${(Number(value)).toFixed(1)}s`,
                 },
               },
               y: {
-                grid: {
-                  display: false, // ❌ 가로선 안보이게
-                },
+                grid: { display: false },
+
+                min: 30,
+                max: 100,
                 ticks: {
-                  display: false,
+                  callback: (val) => `MIDI ${val}`,
+                  color: '#444',
                 },
-                title: {
-                  display: false, // ❌ 제목 숨김
-                },
-                min: 0,
-                max: 1000,
               },
             },
-          }
+          },
         });
       }
     }
   }, []);
 
-  const updateChart = (labels: number[], liveData: (number | null)[]) => {
+  const updateChart = () => {
     if (!chartRef.current) return;
-  
-    chartRef.current.data.labels = labels;
-    chartRef.current.data.datasets[0].data = liveData;
-  
-    // 🔍 각 ms 타임스탬프에 대해 10ms 단위 originalPitch 인덱스로 대응
-    const originalData = labels.map((time) => {
-      const index = Math.floor(time / 34);
+
+    const timeStamps = timeStampsRef.current;
+    const userPitch = pitchDataRef.current.map(hzToMidi);
+
+    // 현재 시간(ms)
+    const now = timeStamps.at(-1) ?? 0;
+
+    // 범위: 1초 전 ~ 4초 후
+    const windowStart = now - 1000;
+    const windowEnd = now + 4000;
+
+    const filteredTime = timeStamps.filter((t) => t >= windowStart && t <= windowEnd);
+    const filteredUserPitch = userPitch.slice(-filteredTime.length);
+
+    const frameDuration = 256 / 22050 * 1000;
+    const filteredOriginal = filteredTime.map((t) => {
+      const index = Math.floor(t / frameDuration);
       return originalNotes[index] ?? null;
     });
-  
-    chartRef.current.data.datasets[1].data = originalData;
-  
-    const nowMs = (audioRef.current?.currentTime ?? 0) * 1000;
-  
+
+    chartRef.current.data.labels = filteredTime;
+    chartRef.current.data.datasets[0].data = filteredUserPitch;
+    chartRef.current.data.datasets[1].data = filteredOriginal;
+
     chartRef.current.update('none');
   };
-  
 
   const handleRecord = async () => {
     if (isRecording) {
-      // 녹음 종료
       setIsRecording(false);
       isRecordingRef.current = false;
 
-      // MediaRecorder 중단
       mediaRecorderRef.current?.stop();
       mediaRecorderRef.current!.onstop = () => {
         const audioBlob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
         const userUrl = URL.createObjectURL(audioBlob);
-        setUserAudioUrlAction(userUrl); // 🔊 유저 음성만 담긴 파일 저장
+        setUserAudioUrlAction(userUrl);
       };
 
-      // 오디오 정지
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
-      
-      // 분석용 상태에 복사
-      setPitchData([...pitchDataRef.current]);
-      setTimeStamps([...timeStampsRef.current]);
       return;
     }
-    
+
     // 초기화
     pitchDataRef.current = [];
     timeStampsRef.current = [];
-    tickRef.current = 0;
+    startTimeRef.current = performance.now();
     setIsRecording(true);
     isRecordingRef.current = true;
 
-    // 오디오 재생 시작
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch((err) => {
-        console.error('오디오 재생 오류:', err);
-      });
+      audioRef.current.play().catch(console.error);
     }
-    
+
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    // ✅ MediaRecorder 초기화 추가
     const mediaRecorder = new MediaRecorder(stream);
     mediaRecorderRef.current = mediaRecorder;
     recordedChunksRef.current = [];
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        recordedChunksRef.current.push(event.data);
-      }
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunksRef.current.push(e.data);
     };
     mediaRecorder.start();
 
@@ -193,31 +201,34 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
     source.connect(analyser);
-    
+
     const buffer = new Float32Array(analyser.fftSize);
-    
+
     const loop = () => {
       if (!isRecordingRef.current) {
         audioContext.close();
         return;
       }
-      
+
       analyser.getFloatTimeDomainData(buffer);
       const pitch = detectPitch(buffer, audioContext.sampleRate);
-      
+      const elapsed = performance.now() - startTimeRef.current;
+
       pitchDataRef.current.push(pitch ?? null);
-      timeStampsRef.current.push(tickRef.current);
-      updateChart(timeStampsRef.current, pitchDataRef.current);
-      
-      tickRef.current += 50;
+      timeStampsRef.current.push(elapsed);
+      updateChart();
+
+      const currentScore = calculateAccuracyLive(pitchDataRef.current, originalNotes);
+      setScore(currentScore);
+
       requestAnimationFrame(loop);
     };
-    
+
     loop();
   };
 
   // console.log('PitchRecorder mounted with uuid:', uuid, 'audioUrl:', audioUrl);
-
+  
   const fetchAudioData = async () => {
     const response = await fetch('/api/music_meta/' + uuid, {
       method: 'GET',
@@ -246,94 +257,101 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     return data;
   };
 
+  // === fetch original notes ===
   useEffect(() => {
-    if (uuid && audioUrl) {
-      console.log('Fetching audio data for uuid:', uuid);
-      fetchAudioData()
-        .then((data) => {
-          console.log('Audio data fetched');
-          lyricsRef.current = JSON.parse(data.lyrics);
-          setOriginalPitch(data.pitch_vector);
-        })
-        .catch((error) => {
-          console.error('Error fetching audio data:', error);
-        });
-      fetchAudioNotes()
-        .then((data) => {
-          setOriginalNotes(data.notes)
-        })
-        .catch((error) => {
-          console.error('Error fetching audio notes:', error);
-        });
-      
-    }
+    if (!uuid || !audioUrl) return;
+
+    // fetch('/api/music_meta_note/' + uuid)
+    //   .then((res) => res.json())
+    //   .then((data) => setOriginalNotes(data.notes))
+    //   .catch(console.error);
+    console.log('Fetching audio data for uuid:', uuid);
+    fetchAudioData()
+      .then((data) => {
+        console.log('Audio data fetched');
+        lyricsRef.current = JSON.parse(data.lyrics);
+      })
+      .catch((error) => {
+        console.error('Error fetching audio data:', error);
+      });
+    fetchAudioNotes()
+      .then((data) => {
+        setOriginalNotes(data.notes)
+      })
+      .catch((error) => {
+        console.error('Error fetching audio notes:', error);
+      });
   }, [uuid, audioUrl]);
 
-  // 현재 오디오 시간에 맞춰 가사 업데이트
+  // 가사 업데이트
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!audioRef.current) return;
-  
-      const currentTime = audioRef.current.currentTime;
+      if (!isRecordingRef.current || !startTimeRef.current || !lyricsRef.current) return;
+
+      const elapsedSec = (performance.now() - startTimeRef.current) / 1000;
+
       const current = lyricsRef.current.find(
         (line) =>
-          currentTime >= line.start &&
-          currentTime <= line.start + line.duration
+          elapsedSec >= line.start &&
+          elapsedSec <= line.start + line.duration
       );
-  
+
       setCurrentLyric(current?.text ?? '');
-    }, 100); // 100ms 단위로 확인
-  
+    }, 100); // 100ms 주기로 검사
+
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div>
-      <h1 className='text-2xl font-bold mb-4'>실시간 피치 분석기</h1>
       <audio ref={audioRef} src={audioUrl ?? undefined} />
 
-      <div className='w-[60%] mx-auto mb-4'>
+      <div className='w-[60%] mx-auto my-6 relative'>
         <canvas
           ref={canvasRef}
           width={600}
           height={300}
           style={{ marginTop: '20px', border: '1px solid #ccc' }}
         />
-      </div>
-
-      {currentLyric && (
-        <div> 
         <h1
-          className="text-center my-4 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
+          className="absolute right-4 top-3 inline-block text-4xl font-extrabold text-indigo-500 drop-shadow-sm drop-shadow-indigo-500"
           style={{
-            textShadow: `-1px -1px 0 #6366F1,
-                         1px -1px 0 #6366F1,
-                        -1px  1px 0 #6366F1,
-                         1px  1px 0 #6366F1`
+            textShadow: `-1px -1px 0 #FFFFFF,
+                         1px -1px 0 #FFFFFF,
+                        -1px  1px 0 #FFFFFF,
+                         1px  1px 0 #FFFFFF`
           }}
         >
-          {currentLyric}
+          {score} 점 
         </h1>
-        </div>
-        
-      )}
-      <Button
-        type="primary"
-        icon={isRecording ? <AudioFilled /> : <AudioOutlined />}
-        size="large"
-        onClick={handleRecord}
-        style={{
-          backgroundColor: '#6366F1', // indigo-400에 해당
-          borderColor: '#6366F1',
-          maxWidth: 200,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-        className='ml-auto mr-2'
-      >
-        {isRecording ? '녹음 종료' : '실시간 피치 녹음'}
-      </Button>
+      </div>
+      <div className='h-8'> 
+        {currentLyric && (
+          <h1
+            className="text-center my-4 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
+            style={{
+              textShadow: `-1px -1px 0 #6366F1,
+                           1px -1px 0 #6366F1,
+                          -1px  1px 0 #6366F1,
+                           1px  1px 0 #6366F1`
+            }}
+          >
+            {currentLyric}
+          </h1>
+        )}
+      </div>
+      <div className='flex flex-row justify-center mt-12 relative'>
+
+        <Button
+          type="primary"
+          icon={isRecording ? <AudioFilled /> : <AudioOutlined />}
+          size="large"
+          style={{padding: "24px", fontSize: "20px", fontWeight: "700"}}
+          onClick={handleRecord}
+        >
+          {isRecording ? '녹음 종료' : '녹음 시작'}
+        </Button>
+      </div>
 
     </div>
   );
