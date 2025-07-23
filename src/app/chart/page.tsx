@@ -5,7 +5,7 @@ import SongCharts from "@/components/view/SongCharts";
 import { useEffect, useState } from "react";
 
 export default  function ChartPage() {
-  const [chartData, setChartData] = useState([]);
+  const [chartData, setChartData] = useState<[] | null>(null);
 
   const fetchGenieChart = async () => {
     try {
@@ -19,7 +19,7 @@ export default  function ChartPage() {
     }
   };
   useEffect (() => {
-    if (chartData.length === 0) {
+    if (chartData == null) {
       console.log('Fetching Genie chart data...');
       fetchGenieChart().then(setChartData);
     }

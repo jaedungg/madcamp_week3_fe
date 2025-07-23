@@ -238,8 +238,9 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
     });
 
     // 원곡 피치 데이터 생성 - 전체 윈도우에 대해 미리 생성 (미래 피치 포함)
-    const originalPitchData: ({ x: number; y: number } | null)[] = [];
-
+    const originalPitchData: { x: number; y: number }[] = [];
+    
+    // 윈도우 전체 범위에 대해 원곡 피치 생성 (10ms 간격으로)
     for (let timestamp = windowStart; timestamp <= windowEnd; timestamp += 10) {
       const frameIndex = Math.floor(timestamp / FRAME_DURATION_MS);
       const originalPitch = originalNotes[frameIndex];
@@ -247,10 +248,8 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
       if (originalPitch !== null && originalPitch !== undefined) {
         originalPitchData.push({
           x: timestamp,
-          y: originalPitch,
+          y: originalPitch
         });
-      } else {
-        originalPitchData.push(null); // 선을 끊는 지점
       }
     }
 

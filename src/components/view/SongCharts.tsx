@@ -18,7 +18,7 @@ interface SongChartsProps {
     rank: string;
     title: string;
     artist: string;
-  }>;
+  }> | null;
 }
 
 export default function SongCharts({ genieChart }: SongChartsProps) {
