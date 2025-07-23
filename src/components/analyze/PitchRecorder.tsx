@@ -122,6 +122,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
               {
                 label: 'Original Note (MIDI)',
                 data: [],
+                spanGaps: false,
                 borderColor: 'gray',
                 fill: false,
                 pointRadius: 0,

@@ -18,7 +18,7 @@ interface MusicItem {
 }
 
 interface Props {
-  items: MusicItem[];
+  items: MusicItem[] | null;
   isChart?: boolean;
   onClick: (item: any) => {}
 }
@@ -36,11 +36,11 @@ const MusicList: React.FC<Props> = ({ items, isChart = false, onClick }) => {
   return (
     <App>
       {contextHolder}
-      {items.length === 0 && (
+      {items == null ? (
         <div className="absolute inset-0 flex items-center justify-center z-50 bg-white" style={{ minHeight: '100%' }}>
           <Spin tip="Loading..." size="large">{content}</Spin>
         </div>
-      )}
+      ) :
       <List
         itemLayout="horizontal"
         dataSource={items}
@@ -83,6 +83,7 @@ const MusicList: React.FC<Props> = ({ items, isChart = false, onClick }) => {
           </List.Item>
         )}
       />
+      }
     </App>
   );
 };

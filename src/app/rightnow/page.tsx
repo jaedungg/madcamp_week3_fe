@@ -33,7 +33,7 @@ function convertToMusicItems(data: (string | null)[][]): MusicItem[] {
 }
 
 export default  function ChartPage() {
-  const [allMusics, setAllMusics] = useState<MusicItem[]>([]);
+  const [allMusics, setAllMusics] = useState<MusicItem[] | null>(null);
   const [messageApi, contextHolder] = message.useMessage();
   const route = useRouter();
 
@@ -51,7 +51,7 @@ export default  function ChartPage() {
   };
 
   useEffect (() => {
-    if (allMusics.length === 0) {
+    if (allMusics == null) {
       console.log('Fetching Genie chart data...');
       fetchAllMusics().then(setAllMusics);
     }
