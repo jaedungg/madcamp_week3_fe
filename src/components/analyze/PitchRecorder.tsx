@@ -144,7 +144,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
               {
                 label: 'Current Time Line',
                 data: [],
-                borderColor: 'rgb(199, 210, 254)', // red-500
+                borderColor: 'rgba(6, 182, 212, 0.3)', // red-500
                 backgroundColor: 'rgba(239, 68, 68, 0.2)',
                 fill: false,
                 pointRadius: 0,
@@ -509,12 +509,12 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
       </div>
         {isRecording && (
           <h1
-            className="h-8 text-center my-2 text-2xl font-bold text-white drop-shadow-sm drop-shadow-cyan-500"
+            className="h-8 text-center my-2 text-2xl font-bold text-white drop-shadow-sm drop-shadow-cyan-700"
             style={{
-              textShadow: `-1px -1px 0 #4f46e5,
-                           1px -1px 0 #4f46e5,
-                          -1px  1px 0 #4f46e5,
-                           1px  1px 0 #4f46e5`
+              textShadow: `-1px -1px 0 #0e7490,
+                           1px -1px 0 #0e7490,
+                          -1px  1px 0 #0e7490,
+                           1px  1px 0 #0e7490`
             }}
           >
             {currentLyric}

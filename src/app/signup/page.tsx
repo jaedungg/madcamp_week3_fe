@@ -103,6 +103,10 @@ export default function SettingsPage() {
     setIsDark(false);
   };  
 
+  function handleGoSignin() {
+    router.push('/signin');
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white shadow-md rounded-lg p-8 space-y-6">
@@ -118,11 +122,15 @@ export default function SettingsPage() {
   
         {/* 프로필 섹션 */}
         <div className="flex flex-row pl-3 items-center gap-4">
-          <img
-            src={previewUrl || '/images/profile.jpg'}
-            alt="프로필 사진"
-            className="w-20 h-20 rounded-full object-cover border"
-          />
+          {/* 이미지 컨테이너: 1:1 비율 유지 + 넘치는 부분 잘림 */}
+          <div className="relative w-20 aspect-square rounded-full overflow-hidden border bg-gray-100">
+            <img
+              src={previewUrl || '/images/profile.jpg'}
+              alt="프로필 사진"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+
           <input
             type="file"
             accept="image/*"
@@ -171,6 +179,12 @@ export default function SettingsPage() {
             className="w-full bg-cyan-600 text-white py-2 rounded hover:bg-cyan-700 transition"
           >
             회원가입
+          </button>
+          <button
+            onClick={handleGoSignin}
+            className="w-full bg-gray-100 text-gray-800 py-2 rounded hover:bg-gray-200 transition"
+          >
+            로그인
           </button>
         </div>
       </div>
