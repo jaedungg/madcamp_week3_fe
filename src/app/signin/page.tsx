@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const [userid, setUserid] = useState('');
   const [passwd, setPasswd] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const router = useRouter();
 
   async function handleLogin() {
     setErrorMsg('');
     const result = await signIn('credentials', {
-      redirect: false, // false면 팝업이나 별도 리다이렉션 없이 결과만 받음
+      redirect: false, // false면 결과만 받음
       userid,
       passwd,
     });
@@ -19,10 +21,14 @@ export default function SettingsPage() {
     if (result?.error) {
       setErrorMsg(result.error);
     } else {
-      // 로그인 성공 시 원하는 페이지로 강제 이동 가능
-      // 예: router.push('/') 또는 reload 등
       alert('로그인 성공!');
+      // 로그인 성공 후 메인 페이지 등으로 이동 가능
+      router.push('/');
     }
+  }
+
+  function handleGoSignup() {
+    router.push('/signup');
   }
 
   return (
@@ -49,6 +55,15 @@ export default function SettingsPage() {
           className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
         >
           로그인
+        </button>
+
+        {/* 회원가입 버튼 추가 */}
+        <button
+          onClick={handleGoSignup}
+          className="mt-2 bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+          type="button"
+        >
+          회원가입
         </button>
       </div>
     </div>
