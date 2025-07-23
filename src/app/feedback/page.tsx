@@ -1,25 +1,24 @@
 'use client';
-
-import { useSession } from 'next-auth/react';
+import { useUser } from '@/context/UserContext';
 import React, { useState, useEffect } from 'react';
 import {
   Button,
   Card,
-  Table,
   Collapse,
   Typography,
   Spin,
   message,
   Tag,
+  Progress,
 } from 'antd';
 import {
+  ClockCircleOutlined,
+  BulbOutlined,
   ArrowLeftOutlined,
-  UserOutlined,
-  CrownFilled,
 } from '@ant-design/icons';
 
 const { Panel } = Collapse;
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 type UserRecord = {
   recordid: number;
@@ -31,83 +30,93 @@ type UserRecord = {
   onset_times: string;
   created_at: string;
   title: string;
-  artist: string;
+  artist: string; // 가수명 api필드명 주의
 };
 
-const beurl = 'http://172.20.12.58:80';
+const beurl = 'http://172.20.12.58:80'; // API 서버 주소
+function ScoreDashboard({
+  pitchScore,
+  rhythmScore,
+}: {
+  pitchScore: number;
+  rhythmScore: number;
+}) {
+  const overallScore = ((pitchScore + rhythmScore) / 2).toFixed(1);
+  const scoreColor =
+    Number(overallScore) >= 85
+      ? '#52c41a'
+      : Number(overallScore) >= 70
+      ? '#faad14'
+      : '#f5222d';
 
-const columns = [
-  {
-    title: '순위',
-    dataIndex: 'ranking',
-    key: 'ranking',
-    render: (ranking: number) =>
-      ranking === 1 ? (
-        <CrownFilled style={{ color: '#faad14', fontSize: 16 }} />
-      ) : (
-        ranking
-      ),
-    width: 60,
-    align: 'center' as const,
-  },
-  {
-    title: '닉네임',
-    dataIndex: 'userid',
-    key: 'userid',
-    render: (userid: string) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <UserOutlined />
-        <span>{userid}</span>
+  return (
+    <Card
+      className="bg-white dark:bg-neutral-900 shadow-lg text-center rounded-xl p-6 mb-6"
+      style={{ maxWidth: 320, margin: '0 auto' }}
+    >
+      <Title level={3} className="mb-4">
+        📊 종합 점수
+      </Title>
+      <div className="flex justify-center mb-4">
+        <Progress
+          type="circle"
+          percent={Number(overallScore)}
+          format={(percent) => `${percent}점`}
+          strokeColor={scoreColor}
+          size={120}
+        />
       </div>
-    ),
-    width: 120,
-  },
-  {
-    title: '점수',
-    dataIndex: 'score',
-    key: 'score',
-    render: (score: number) => <span style={{ fontWeight: 600 }}>{score}</span>,
-    width: 80,
-    align: 'center' as const,
-  },
-];
+      <Paragraph className="text-lg">
+        평균 <Text strong>{overallScore}</Text>점으로 분석되었습니다.
+      </Paragraph>
 
-export default function UserSongsAndRankingPage() {
-  const { data: session, status } = useSession();
+      <div className="mt-6 space-y-3">
+        <div className="flex items-center space-x-4 justify-center">
+          <span className="font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            🎯 음정 정확도
+          </span>
+          <Progress
+            percent={pitchScore}
+            showInfo={false}
+            strokeColor="#722ed1"
+            style={{ width: 160 }}
+          />
+          <span className="w-10 text-right">{pitchScore}</span>
+        </div>
+        <div className="flex items-center space-x-4 justify-center">
+          <span className="font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            🎯 박자 정확도
+          </span>
+          <Progress
+            percent={rhythmScore}
+            showInfo={false}
+            strokeColor="#1890ff"
+            style={{ width: 160 }}
+          />
+          <span className="w-10 text-right">{rhythmScore}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
+export default function SongAnalysisWithFeedback() {
+  const { userid } = useUser();
   const [myRecords, setMyRecords] = useState<UserRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
-  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
-  const [ranking, setRanking] = useState<
-    Array<{ key: string; ranking: number; userid: string; score: number }>
-  >([]);
-  const [loadingRanking, setLoadingRanking] = useState(false);
+  const [selectedSong, setSelectedSong] = useState<UserRecord | null>(null);
 
-  // 세션 로딩중 표시
-  // if (status === 'loading')
-  //   return (
-  //     <div style={{ textAlign: 'center', marginTop: 100 }}>
-  //       <Spin size="large" />
-  //       <div>세션 로딩중...</div>
-  //     </div>
-  //   );
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
 
-  // 세션 없거나 userid 없으면 로그인 필요 메시지
-
-  const userid = session?.user?.userid;
-  console.log(userid);
+  // 1) 내가 부른 노래 목록 불러오기
   useEffect(() => {
-    if (!userid) return;
     async function fetchMyRecords() {
       setLoadingRecords(true);
       try {
         const res = await fetch(beurl + '/userid_record_info', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // 필요하면 credentials 포함 (fetch 기본은 제외)
-            // credentials: 'include'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userid }),
         });
         if (!res.ok) throw new Error('기록 불러오기 실패: ' + res.statusText);
@@ -122,53 +131,53 @@ export default function UserSongsAndRankingPage() {
     fetchMyRecords();
   }, [userid]);
 
+  // 2) 선택된 노래가 바뀔 때 AI 피드백 API 호출
   useEffect(() => {
-    if (!selectedSongId) {
-      setRanking([]);
+    if (!selectedSong) {
+      setFeedback(null);
       return;
     }
 
-    async function fetchRanking() {
-      setLoadingRanking(true);
+    async function fetchFeedback() {
+      setLoadingFeedback(true);
       try {
-        const res = await fetch(
-          beurl + `/ranks/${encodeURIComponent(selectedSongId)}`
-        );
-        if (!res.ok) throw new Error('랭킹 불러오기 실패: ' + res.statusText);
-        const data = await res.json();
-        setRanking(data);
+        const res = await fetch(beurl + '/vocal_assessment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userid,
+            musicid: selectedSong.musicid,
+          }),
+        });
+        if (!res.ok) throw new Error('피드백 불러오기 실패: ' + res.statusText);
+        const json = await res.json();
+        setFeedback(json.feedback || '피드백이 없습니다.');
       } catch (e: any) {
-        message.error(e.message || '랭킹 불러오기 실패');
+        message.error(e.message || '피드백 불러오기 실패');
+        setFeedback('피드백을 가져올 수 없습니다.');
       } finally {
-        setLoadingRanking(false);
+        setLoadingFeedback(false);
       }
     }
+    fetchFeedback();
+  }, [selectedSong, userid]);
 
-    fetchRanking();
-  }, [selectedSongId]);
-
+  // 내가 부른 곡 리스트 컴포넌트
   function SongList() {
-    if (loadingRecords)
-      return (
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Spin />
-          <div style={{ marginTop: 12, color: '#888' }}>
-            내 노래 목록 불러오는 중...
-          </div>
-        </div>
-      );
+    if (loadingRecords) return <Spin tip="내 노래 목록 불러오는 중..." />;
+
     if (!myRecords.length)
       return <Paragraph>내가 부른 노래가 없습니다.</Paragraph>;
 
+    // musicid 기준 최신만 유지
     const uniqueSongs: { [key: string]: UserRecord } = {};
     myRecords.forEach((rec) => {
       const key = rec.musicid;
       if (
         !uniqueSongs[key] ||
         new Date(rec.created_at) > new Date(uniqueSongs[key].created_at)
-      ) {
+      )
         uniqueSongs[key] = rec;
-      }
     });
 
     const songList = Object.values(uniqueSongs).sort(
@@ -184,12 +193,12 @@ export default function UserSongsAndRankingPage() {
             <div
               key={song.musicid}
               className="py-2 cursor-pointer hover:bg-indigo-50 transition rounded flex items-center gap-2"
-              onClick={() => setSelectedSongId(song.musicid)}
+              onClick={() => setSelectedSong(song)}
               aria-label={`곡 ${song.title} 선택`}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') setSelectedSongId(song.musicid);
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') setSelectedSong(song);
               }}
             >
               <div className="font-bold" style={{ minWidth: 55 }}>
@@ -211,60 +220,57 @@ export default function UserSongsAndRankingPage() {
     );
   }
 
-  function RankingView() {
-    const selectedSong =
-      myRecords.find((r) => r.musicid === selectedSongId) || null;
+  // AI 피드백 보이는 컴포넌트 (기존 UI 재활용, loading 상태 포함)
+  function FeedbackView() {
+    if (!selectedSong) return null;
 
     return (
       <Card>
-        <div className="flex items-center gap-2 mb-3">
-          <Button
-            icon={<ArrowLeftOutlined />}
-            type="text"
-            onClick={() => setSelectedSongId(null)}
-            style={{ fontSize: 18 }}
-            aria-label="이전 화면으로 돌아가기"
+        <Button
+          type="text"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => setSelectedSong(null)}
+          style={{ marginBottom: 12, fontSize: 18 }}
+          aria-label="노래 리스트로 돌아가기"
+        />
+        <Title level={4} style={{ marginBottom: 8 }}>
+          {selectedSong.title}{' '}
+          <span style={{ fontSize: '1rem', color: '#888' }}>
+            ({selectedSong.artist || '가수정보 없음'})
+          </span>
+        </Title>
+
+        {/* 점수 박스 아래쪽 공간 추가 */}
+        <div style={{ marginBottom: 24 }}>
+          <ScoreDashboard
+            pitchScore={selectedSong.score}
+            rhythmScore={selectedSong.score}
           />
-          <div>
-            <Title
-              level={4}
-              style={{
-                display: 'inline',
-                margin: 0,
-                fontWeight: 700,
-                fontSize: 19,
-              }}
-            >
-              {selectedSong?.title || '노래'}
-            </Title>{' '}
-            <span style={{ marginLeft: 8, color: '#888', fontSize: 15 }}>
-              {selectedSong?.artist ?? ''}
-            </span>
-            <Tag color="green" style={{ marginLeft: 10, fontSize: 12 }}>
-              내 점수 {selectedSong?.score ?? '-'}
-            </Tag>
-          </div>
         </div>
-        {loadingRanking ? (
-          <Spin tip="랭킹 로딩 중..." />
+
+        {/* 또는 이처럼 감싸는 div에 margin 주기 */}
+        {/* <div style={{ marginBottom: 24 }}>
+          <ScoreDashboard pitchScore={selectedSong.score} rhythmScore={selectedSong.score} />
+        </div> */}
+
+        {loadingFeedback ? (
+          <Spin tip="피드백을 불러오는 중입니다..." />
         ) : (
-          <Table
-            dataSource={ranking}
-            columns={columns}
-            pagination={false}
-            bordered
-            size="small"
-            locale={{ emptyText: '랭킹 데이터가 없습니다.' }}
-            rowKey={(record) => record.key}
-          />
+          <Collapse accordion style={{ marginTop: 24 /* 추가 여백 */ }}>
+            <Panel header="📍 AI 보컬 피드백" key="1">
+              <Paragraph style={{ fontSize: 14, whiteSpace: 'pre-line' }}>
+                {feedback || '피드백이 없습니다.'}
+              </Paragraph>
+            </Panel>
+          </Collapse>
         )}
       </Card>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-3 space-y-8">
-      {selectedSongId === null ? <SongList /> : <RankingView />}
+    <div className="max-w-3xl mx-auto p-4 space-y-8">
+      {selectedSong ? <FeedbackView /> : <SongList />}
     </div>
   );
 }
