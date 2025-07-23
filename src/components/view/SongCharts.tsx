@@ -44,7 +44,7 @@ export default function SongCharts({ genieChart }: SongChartsProps) {
 
 
   return (
-    <App>
+    <App className='relative h-full w-full'>
       {contextHolder}
       {/* 상단 탭 + 필터 */}
       {/* 상단 탭 + 필터 */}

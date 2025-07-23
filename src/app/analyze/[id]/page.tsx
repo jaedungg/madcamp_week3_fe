@@ -13,7 +13,7 @@ export default function PitchAnalyzerIdPage() {
   const id = params?.id as string | null;
 
   const uuid = id;
-  const audioUrl = `/downloads/${id}.mp3`;
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [userAudioUrl, setUserAudioUrl] = useState<string | null>(null);
 
 
@@ -23,6 +23,7 @@ export default function PitchAnalyzerIdPage() {
         uuid={uuid}
         audioUrl={audioUrl}
         setUserAudioUrlAction = {setUserAudioUrl}
+        setAudioUrlAction = {setAudioUrl}
       />
       <UserRecord
         uuid={uuid}

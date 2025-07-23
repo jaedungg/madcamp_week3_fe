@@ -62,14 +62,12 @@ export default  function ChartPage() {
   };
 
   return (
-    <div className="font-sans flex flex-col h-full w-full space-y-12">
-      <App>
+    <div className="relative font-sans flex flex-col h-full w-full space-y-12">
+      <App className="h-full w-full">
         {contextHolder}
-          <div className="space-y-2 h-full relative">
-            <h2 className="text-2xl font-bold mb-4">Recently uploaded</h2>
-            <div className="h-full">
-              <SonLists items={allMusics} onClick={handleClick}/>
-            </div>
+          <h2 className="text-2xl font-bold mb-4">Recently uploaded</h2>
+          <div className="h-full">
+            <SonLists items={allMusics} onClick={handleClick}/>
         </div>
       </App>
     </div>

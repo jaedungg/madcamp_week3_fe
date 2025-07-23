@@ -9,12 +9,11 @@ import { useSession } from 'next-auth/react';
 
 Chart.register(...registerables);
 
-const { Text } = Typography;
-
 interface PitchRecorderProps {
   uuid: string | null;
   audioUrl: string | null;
   setUserAudioUrlAction: Dispatch<SetStateAction<string | null>>;
+  setAudioUrlAction: Dispatch<SetStateAction<string | null>>;
 }
 
 function hzToMidi(hz: number | null): number | null {
@@ -54,7 +53,7 @@ function calculateAccuracyLive(
   return total === 0 ? 0 : Math.round((correct / total) * 100);
 }
 
-export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : PitchRecorderProps) {
+export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, setAudioUrlAction} : PitchRecorderProps) {
   const { data: session } = useSession();
   const userid = session?.user?.userid || '';
   
@@ -85,6 +84,22 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
   const HOP_LENGTH = 256;
   const FRAME_DURATION_MS = (HOP_LENGTH / SAMPLE_RATE) * 1000; // ~11.6ms per frame
 
+  const handleDownload = async () => {
+    if (!uuid) return;
+
+    const res = await fetch(`/api/accompaniment?uuid=${uuid}`);
+    const data = await res.json();
+
+    console.log('Response data (audioUrl):', data);
+    if (data.path) setAudioUrlAction(data.path);
+  };
+
+  useEffect(() => {
+    if (uuid) {
+      handleDownload();
+    }
+  }, [uuid]);
+
   // === Chart 초기화 ===
   useEffect(() => {
     if (canvasRef.current && !chartRef.current) {
@@ -101,7 +116,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
                 borderColor: 'rgb(99, 102, 241)', // indigo-300
                 fill: false,
                 pointRadius: 0,
-                // tension: 0.1,
+                tension: 0.1,
                 borderWidth: 3,
               },
               {
@@ -112,7 +127,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
                 pointRadius: 0,
                 borderDash: [8, 4],
                 borderWidth: 3, // 더 두꺼운 선
-                // tension: 0.1, // 부드러운 곡선
+                tension: 0.1, // 부드러운 곡선
               },
               {
                 label: 'Current Point',
@@ -222,19 +237,17 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
     });
 
     // 원곡 피치 데이터 생성 - 전체 윈도우에 대해 미리 생성 (미래 피치 포함)
-    const originalPitchData: { x: number; y: number }[] = [];
-    
-    // 윈도우 전체 범위에 대해 원곡 피치 생성 (10ms 간격으로)
+    const originalPitchData: ({ x: number; y: number | null })[] = [];
+
     for (let timestamp = windowStart; timestamp <= windowEnd; timestamp += 10) {
       const frameIndex = Math.floor(timestamp / FRAME_DURATION_MS);
       const originalPitch = originalNotes[frameIndex];
-      
-      if (originalPitch !== null && originalPitch !== undefined) {
-        originalPitchData.push({
-          x: timestamp,
-          y: originalPitch
-        });
-      }
+    
+      // pitch가 null이면 그래프에 null을 넣어 선을 끊음
+      originalPitchData.push({
+        x: timestamp,
+        y: originalPitch !== null && originalPitch !== undefined ? originalPitch : null
+      });
     }
 
     // 차트 데이터 업데이트
@@ -457,7 +470,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction} : 
 
   return (
     <div className='relative h-full w-full'>
-      {!isNoteFetched && (
+      {(!isNoteFetched || !audioUrl) && (
         <div className='absolute inset-0 flex items-center justify-center z-50 bg-white' style={{ minHeight: '100%' }}>
           <Spin tip="Loading..." size="large">{content}</Spin>
         </div>
