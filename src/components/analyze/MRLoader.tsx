@@ -5,6 +5,7 @@ import { Dispatch, useEffect } from 'react';
 import { SetStateAction, useState } from 'react';
 import { Input, Form, Select, Upload } from 'antd';
 import { useRouter } from 'next/navigation';
+import { FormInstance } from 'antd/es/form';
 
 interface MRLoaderProps {
   uuid: string | null;
@@ -140,6 +141,14 @@ export default function MRLoader({
   };
   const [form] = Form.useForm();
 
+  const watchedValues = Form.useWatch([], form); // 전체 필드 감시
+  const allFieldsFilled = () => {
+    if (!method) return false;
+    if (method === 'youtube' && !youtubeUrl.trim()) return false;
+    if (method === 'file' && !file) return false;
+    return title.trim() && artist.trim() && genre.trim();
+  };
+
 
   return (
     <div className="max-w-4xl mx-auto my-auto space-y-10 text-sm">
@@ -239,10 +248,14 @@ export default function MRLoader({
 
         <button
           onClick={handleSeparation}
-          className={`flex w-full items-center justify-center p-3 rounded-lg ${isSeparating ? "bg-cyan-400" : "bg-cyan-300"} transition hover:bg-cyan-400 cursor-pointer`}
+          disabled={!allFieldsFilled() || isSeparating}
+          className={`flex w-full items-center justify-center p-3 rounded-lg transition
+            ${allFieldsFilled() && !isSeparating ? "bg-cyan-300 hover:bg-cyan-400" : "bg-gray-300 cursor-not-allowed"}
+          `}
         >
-          {isSeparating ? <p className='flex gap-3 items-center'><LoadingOutlined /> 분리 중</p> : '🔊 MR 분리하기'}
-
+          {isSeparating ? (
+            <p className='flex gap-3 items-center'><LoadingOutlined /> 분리 중</p>
+          ) : '🔊 MR 분리하기'}
         </button>
       </div>
 

@@ -237,17 +237,20 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
     });
 
     // 원곡 피치 데이터 생성 - 전체 윈도우에 대해 미리 생성 (미래 피치 포함)
-    const originalPitchData: ({ x: number; y: number | null })[] = [];
+    const originalPitchData: ({ x: number; y: number } | null)[] = [];
 
     for (let timestamp = windowStart; timestamp <= windowEnd; timestamp += 10) {
       const frameIndex = Math.floor(timestamp / FRAME_DURATION_MS);
       const originalPitch = originalNotes[frameIndex];
     
-      // pitch가 null이면 그래프에 null을 넣어 선을 끊음
-      originalPitchData.push({
-        x: timestamp,
-        y: originalPitch !== null && originalPitch !== undefined ? originalPitch : null
-      });
+      if (originalPitch !== null && originalPitch !== undefined) {
+        originalPitchData.push({
+          x: timestamp,
+          y: originalPitch,
+        });
+      } else {
+        originalPitchData.push(null); // 선을 끊는 지점
+      }
     }
 
     // 차트 데이터 업데이트
