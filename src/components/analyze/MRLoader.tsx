@@ -155,7 +155,7 @@ export default function MRLoader({
             onClick={() => setMethod('youtube')}
             className={`flex flex-1 items-center justify-center p-3 rounded-lg transition cursor-pointer ${
               method === 'youtube'
-                ? "text-black bg-indigo-300"
+                ? "text-black bg-cyan-300"
                 : "bg-gray-100 text-black hover:bg-gray-200"
             }`}
           >
@@ -165,7 +165,7 @@ export default function MRLoader({
             onClick={() => setMethod('file')}
             className={`flex flex-1 items-center justify-center p-3 rounded-lg transition cursor-pointer ${
               method === 'file'
-                ? "text-black bg-indigo-300"
+                ? "text-black bg-cyan-300"
                 : "bg-gray-100 text-black hover:bg-gray-200"
             }`}
           >
@@ -239,7 +239,7 @@ export default function MRLoader({
 
         <button
           onClick={handleSeparation}
-          className={`flex w-full items-center justify-center p-3 rounded-lg ${isSeparating ? "bg-indigo-400" : "bg-indigo-300"} transition hover:bg-indigo-400 cursor-pointer`}
+          className={`flex w-full items-center justify-center p-3 rounded-lg ${isSeparating ? "bg-cyan-400" : "bg-cyan-300"} transition hover:bg-cyan-400 cursor-pointer`}
         >
           {isSeparating ? <p className='flex gap-3 items-center'><LoadingOutlined /> 분리 중</p> : '🔊 MR 분리하기'}
 
@@ -258,14 +258,14 @@ export default function MRLoader({
 
           {/* <button
             onClick={handleDownload}
-            className="w-full p-3 rounded-lg text-lg bg-indigo-300 transition hover:bg-indigo-400"
+            className="w-full p-3 rounded-lg text-lg bg-cyan-300 transition hover:bg-cyan-400"
           >
             🎧 MR 다운로드
           </button> */}
 
           <button
             onClick={() => router.push(`/analyze/${uuid}`)}
-            className="w-full p-3 rounded-lg bg-indigo-500 text-white transition hover:bg-indigo-600"
+            className="w-full p-3 rounded-lg bg-cyan-500 text-white transition hover:bg-cyan-600"
           >
             🎤 이 노래 부르기
           </button>

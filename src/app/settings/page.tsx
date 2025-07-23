@@ -161,11 +161,11 @@ export default function SettingsPage() {
             type="file"
             accept="image/*"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="file:bg-indigo-500 file:text-white file:border-0 file:rounded file:px-3 file:py-1 file:mr-2"
+            className="file:bg-cyan-500 file:text-white file:border-0 file:rounded file:px-3 file:py-1 file:mr-2"
           />
           <button
             onClick={handleImageUpload}
-            className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+            className="bg-cyan-500 text-white px-4 py-2 rounded hover:bg-cyan-600"
           >
             프로필 사진 변경
           </button>
@@ -182,7 +182,7 @@ export default function SettingsPage() {
         />
         <button
           onClick={handleNicknameChange}
-          className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+          className="bg-cyan-500 text-white px-4 py-2 rounded hover:bg-cyan-600"
         >
           닉네임 변경
         </button>
@@ -198,7 +198,7 @@ export default function SettingsPage() {
             onChange={(e) => toggleDarkMode(e.target.checked)}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative peer-checked:bg-indigo-500"></div>
+          <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all relative peer-checked:bg-cyan-500"></div>
         </label>
       </div>
     </div>

@@ -192,7 +192,7 @@ export default function SongAnalysisWithFeedback() {
           {songList.map((song) => (
             <div
               key={song.musicid}
-              className="py-2 cursor-pointer hover:bg-indigo-50 transition rounded flex items-center gap-2"
+              className="py-2 cursor-pointer hover:bg-cyan-50 transition rounded flex items-center gap-2"
               onClick={() => setSelectedSong(song)}
               aria-label={`곡 ${song.title} 선택`}
               role="button"

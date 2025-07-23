@@ -32,39 +32,51 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-10 text-gray-900 dark:text-white">
-      <h1 className="text-2xl font-bold">! 로그인 !</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md bg-white shadow-md rounded-lg p-8 space-y-6">
+        <div className="text-center">
+          <img
+            className="h-60 mx-auto mb-4"
+            src="/images/logo.png"
+            alt="로고"
+          />
+          <h1 className="text-2xl font-bold text-gray-800">로그인</h1>
+          <p className="text-sm text-gray-500">아이디와 비밀번호를 입력해주세요</p>
+        </div>
 
-      <div className="flex flex-col w-full gap-4">
-        <input
-          className="border border-gray-300 px-3 py-2 rounded"
-          value={userid}
-          onChange={(e) => setUserid(e.target.value)}
-          placeholder="아이디 입력"
-        />
-        <input
-          className="border border-gray-300 px-3 py-2 rounded"
-          type="password"
-          value={passwd}
-          onChange={(e) => setPasswd(e.target.value)}
-          placeholder="비밀번호 입력"
-        />
-        {errorMsg && <p className="text-red-500">{errorMsg}</p>}
-        <button
-          onClick={handleLogin}
-          className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
-        >
-          로그인
-        </button>
+        <div className="space-y-4">
+          <input
+            className="w-full border border-gray-300 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            value={userid}
+            onChange={(e) => setUserid(e.target.value)}
+            placeholder="아이디"
+          />
+          <input
+            className="w-full border border-gray-300 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            type="password"
+            value={passwd}
+            onChange={(e) => setPasswd(e.target.value)}
+            placeholder="비밀번호"
+          />
 
-        {/* 회원가입 버튼 추가 */}
-        <button
-          onClick={handleGoSignup}
-          className="mt-2 bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-          type="button"
-        >
-          회원가입
-        </button>
+          {errorMsg && (
+            <p className="text-red-500 text-sm text-center">{errorMsg}</p>
+          )}
+
+          <button
+            onClick={handleLogin}
+            className="w-full bg-cyan-600 text-white py-2 rounded hover:bg-cyan-700 transition"
+          >
+            로그인
+          </button>
+
+          <button
+            onClick={handleGoSignup}
+            className="w-full bg-gray-100 text-gray-800 py-2 rounded hover:bg-gray-200 transition"
+          >
+            회원가입
+          </button>
+        </div>
       </div>
     </div>
   );

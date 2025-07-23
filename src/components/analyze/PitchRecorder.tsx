@@ -113,7 +113,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
               {
                 label: 'User Pitch (MIDI)',
                 data: [],
-                borderColor: 'rgb(99, 102, 241)', // indigo-300
+                borderColor: 'rgb(6, 182, 212)', // cyan-300
                 fill: false,
                 pointRadius: 0,
                 tension: 0.1,
@@ -132,8 +132,8 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
               {
                 label: 'Current Point',
                 data: [],
-                borderColor: 'rgb(99, 102, 241)', // indigo-300
-                backgroundColor: 'rgb(99, 102, 241)', // indigo-300
+                borderColor: 'rgb(6, 182, 212)', // cyan-300
+                backgroundColor: 'rgb(6, 182, 212)', // cyan-300
                 pointRadius: 6,
                 pointBorderWidth: 2,
                 pointBorderColor: 'white',
@@ -493,7 +493,7 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
           />
         </div>
         <h1
-          className="absolute right-4 top-3 inline-block text-4xl font-extrabold text-indigo-500 drop-shadow-sm drop-shadow-indigo-500"
+          className="absolute right-4 top-3 inline-block text-4xl font-extrabold text-cyan-500 drop-shadow-sm drop-shadow-cyan-500"
           style={{
             textShadow: `-1px -1px 0 #FFFFFF,
                          1px -1px 0 #FFFFFF,
@@ -506,12 +506,12 @@ export default function PitchRecorder({uuid, audioUrl, setUserAudioUrlAction, se
       </div>
         {isRecording && (
           <h1
-            className="h-8 text-center my-2 text-2xl font-bold text-white drop-shadow-sm drop-shadow-indigo-500"
+            className="h-8 text-center my-2 text-2xl font-bold text-white drop-shadow-sm drop-shadow-cyan-500"
             style={{
-              textShadow: `-1px -1px 0 #6366F1,
-                           1px -1px 0 #6366F1,
-                          -1px  1px 0 #6366F1,
-                           1px  1px 0 #6366F1`
+              textShadow: `-1px -1px 0 #4f46e5,
+                           1px -1px 0 #4f46e5,
+                          -1px  1px 0 #4f46e5,
+                           1px  1px 0 #4f46e5`
             }}
           >
             {currentLyric}
