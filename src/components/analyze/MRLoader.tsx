@@ -4,9 +4,9 @@ import { CheckCircleOutlined, CheckCircleTwoTone, LoadingOutlined, UploadOutline
 import { Dispatch, useEffect } from 'react';
 import { SetStateAction, useState } from 'react';
 import { Input, Form, Select, Upload } from 'antd';
+import { useRouter } from 'next/navigation';
 
 interface MRLoaderProps {
-  setShowRecorderAction: (value: boolean) => void;
   uuid: string | null;
   audioUrl: string | null;
   setUuidAction: Dispatch<SetStateAction<string | null>>;
@@ -14,12 +14,13 @@ interface MRLoaderProps {
 }
 
 export default function MRLoader({
-  setShowRecorderAction,
   uuid,
   audioUrl,
   setUuidAction,
   setAudioUrlAction,
 }: MRLoaderProps) {
+  const router = useRouter();
+  
   const [method, setMethod] = useState<'youtube' | 'file' | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -28,6 +29,7 @@ export default function MRLoader({
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [genre, setGenre] = useState('');
+  
 
   const handleSeparation = async () => {
     console.log('handleSeparation called');
@@ -262,7 +264,7 @@ export default function MRLoader({
           </button> */}
 
           <button
-            onClick={() => setShowRecorderAction(true)}
+            onClick={() => router.push(`/analyze/${uuid}`)}
             className="w-full p-3 rounded-lg bg-indigo-500 text-white transition hover:bg-indigo-600"
           >
             🎤 이 노래 부르기

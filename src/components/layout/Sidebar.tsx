@@ -2,6 +2,14 @@ import { usePathname, useRouter } from "next/navigation";
 
 const tabs = [
   { id: "chart", label: "인기 차트", icon: (    
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 3L17.0199 10.7838L25 11.4054L18.8832 16.8378L20.7979 25L14 20.5676L7.2021 25L9.11682 16.8378L3 11.4054L10.9801 10.7838L14 3Z" 
+      fill="currentColor"/>
+      <path d="M14 3L10.9801 10.7838L3 11.4054L9.11682 16.8378L7.2021 25L14 20.5676M14 3L17.0199 10.7838L25 11.4054L18.8832 16.8378L20.7979 25L14 20.5676" 
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>)
+    },
+  { id: "rightnow", label: "바로 부르기", icon: (    
     <svg
       width={28}
       height={29}

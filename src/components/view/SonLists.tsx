@@ -12,30 +12,19 @@ import { useMemo } from 'react';
 interface MusicItem {
   title: string;
   artist: string;
+  genre?: string;
+  uuid?: string;
   rank: string;
 }
 
 interface Props {
   items: MusicItem[];
+  isChart?: boolean;
+  onClick: (item: any) => {}
 }
 
-const MusicList: React.FC<Props> = ({ items }) => {
+const MusicList: React.FC<Props> = ({ items, isChart = false, onClick }) => {
   const [messageApi, contextHolder] = message.useMessage();
-
-  const handleClick = async (item: MusicItem) => {
-    try {
-      const res = await fetch(`http://172.20.12.58:80/ytlink/${encodeURIComponent(item.title+item.artist)}`);
-      const data = await res.json();
-      if (data.link) {
-        await navigator.clipboard.writeText(data.link);
-        messageApi.success(`링크 복사됨: ${item.title+item.artist}`);
-      } else {
-        messageApi.error('링크를 찾을 수 없습니다.');
-      }
-    } catch (e) {
-      messageApi.error('링크 가져오기 실패');
-    }
-  };
 
   const contentStyle: React.CSSProperties = {
     padding: 80,
@@ -65,7 +54,7 @@ const MusicList: React.FC<Props> = ({ items }) => {
         renderItem={(item) => (
           <List.Item
             className="bg-white px-3 py-2 rounded-md"
-            onClick={() => handleClick(item)}
+            onClick={() => onClick(item)}
             style={{ cursor: 'pointer' }}
             actions={[
               <Button type="text" icon={<HeartOutlined />} key="like" />,
@@ -77,7 +66,9 @@ const MusicList: React.FC<Props> = ({ items }) => {
               avatar={
                 <div className="flex items-center space-x-4">
                   <PlayCircleFilled className="text-lg" />
+                  {isChart &&
                   <div className="w-10 text-center text-lg font-bold text-gray-700">{item.rank}위</div>
+                  }
                 </div>
               }
               title={

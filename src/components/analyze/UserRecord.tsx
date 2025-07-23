@@ -61,7 +61,7 @@ export default function UserRecord({uuid, audioUrl, userAudioUrl} : UserRecordPr
     setUserRecordPlaying(true);
     const mrAudio = new Audio(audioUrl);
     const userAudio = new Audio(userAudioUrl);
-    mrAudio.volume = 0.6;
+    mrAudio.volume = 0.4;
     userAudio.volume = 1.0;
   
     mrAudio.play();
