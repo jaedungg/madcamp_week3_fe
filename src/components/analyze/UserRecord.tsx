@@ -50,7 +50,7 @@ export default function UserRecord({ uuid, audioUrl, userAudioUrl }: UserRecordP
     const mrAudio = new Audio(mainUrl);
     const vocalAudio = new Audio(vocalUrl);
 
-    mrAudio.volume = 0.6;
+    mrAudio.volume = 0.4;
     vocalAudio.volume = 1.0;
 
     mrAudioRef.current = mrAudio;

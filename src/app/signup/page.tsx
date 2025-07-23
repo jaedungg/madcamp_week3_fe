@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const [userid, setUserid] = useState('');
@@ -11,6 +12,8 @@ export default function SettingsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     if (!file) {
@@ -86,6 +89,7 @@ export default function SettingsPage() {
         alert('회원가입 실패: ' + (result?.error || '서버 오류'));
       } else {
         alert('회원가입 성공!');
+        router.push('/signin');
       }
     } catch (error) {
       console.error('에러 발생:', error);

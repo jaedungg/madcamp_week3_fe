@@ -28,6 +28,7 @@ export default function Header() {
         key="settings"
         icon={<SettingOutlined />}
         onClick={() => router.push('/settings')}
+        style={{ padding: '6px 20px', fontSize: '16px' }} // 크기 조정
       >
         설정
       </Menu.Item>
@@ -35,14 +36,16 @@ export default function Header() {
         key="logout"
         icon={<LogoutOutlined />}
         onClick={() => signOut({ callbackUrl: '/signin' })}
+        style={{ padding: '6px 20px', fontSize: '16px' }} // 크기 조정
       >
         로그아웃
       </Menu.Item>
     </Menu>
+
   );
 
   return (
-    <header className="fixed bg-cyan-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-6 py-4">
+    <header className="fixed bg-cyan-600 top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-4 py-4">
       <div
         className="flex justify-center items-center relative overflow-hidden gap-2.5 cursor-pointer"
         onClick={() => router.push(`/signin`)}
@@ -53,11 +56,11 @@ export default function Header() {
           alt="로고"
         />
       </div>
-      <div className="flex justify-end items-center flex-grow-0 flex-shrink-0 relative gap-2.5 p-2.5">
+      <div className="flex justify-end items-center flex-grow-0 flex-shrink-0 relative gap-4">
         {userid ? (
           <Dropdown overlay={menu} trigger={['click']}>
-            <div className="flex items-center gap-2 cursor-pointer">
-              <p className="text-base font-semibold text-left capitalize text-white">
+            <div className="flex items-center gap-3 cursor-pointer">
+              <p className="text-lg font-semibold text-white text-left">
                 {nickname || userid}
               </p>
               <img
